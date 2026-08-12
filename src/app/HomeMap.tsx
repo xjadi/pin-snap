@@ -10,7 +10,7 @@ export default function HomeMap({ pins }: { pins: MapPin[] }) {
 
   return (
     <>
-      <div className="overflow-hidden rounded-3xl border border-stone-200 shadow-sm">
+      <div className="overflow-hidden rounded-3xl border border-stone-200 shadow-sm dark:border-stone-800">
         <MapView
           pins={pins}
           initialZoom={5}
@@ -19,7 +19,7 @@ export default function HomeMap({ pins }: { pins: MapPin[] }) {
       </div>
 
       {pins.length > 0 && (
-        <p className="mt-3 text-center text-sm text-stone-500">
+        <p className="mt-3 text-center text-sm text-stone-500 dark:text-stone-400">
           {pins.length} pinned memor{pins.length === 1 ? "y" : "ies"} on the map
         </p>
       )}
@@ -29,9 +29,9 @@ export default function HomeMap({ pins }: { pins: MapPin[] }) {
           <button
             key={p.id}
             onClick={() => setActive(p)}
-            className="group overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="group overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
           >
-            <div className="aspect-square w-full bg-stone-100">
+            <div className="aspect-square w-full bg-stone-100 dark:bg-stone-800">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={p.photo_url}
@@ -40,10 +40,10 @@ export default function HomeMap({ pins }: { pins: MapPin[] }) {
               />
             </div>
             <div className="p-2">
-              <p className="truncate text-xs font-medium text-stone-700">
+              <p className="truncate text-xs font-medium text-stone-700 dark:text-stone-200">
                 {p.owner_display_name}
               </p>
-              <p className="truncate text-[11px] text-stone-400">
+              <p className="truncate text-[11px] text-stone-400 dark:text-stone-500">
                 {[p.city, p.country].filter(Boolean).join(", ") || "Pinned"}
               </p>
             </div>

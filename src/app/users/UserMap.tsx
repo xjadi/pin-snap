@@ -14,7 +14,7 @@ export default function UserMap({ pins }: { pins: MapPin[] }) {
 
   return (
     <>
-      <div className="overflow-hidden rounded-3xl border border-stone-200 shadow-sm">
+      <div className="overflow-hidden rounded-3xl border border-stone-200 shadow-sm dark:border-stone-800">
         <MapView
           pins={pins}
           initialCenter={center as [number, number] | undefined}
@@ -28,9 +28,9 @@ export default function UserMap({ pins }: { pins: MapPin[] }) {
           <button
             key={p.id}
             onClick={() => setActive(p)}
-            className="group overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="group overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
           >
-            <div className="aspect-square w-full bg-stone-100">
+            <div className="aspect-square w-full bg-stone-100 dark:bg-stone-800">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={p.photo_url}
@@ -39,7 +39,7 @@ export default function UserMap({ pins }: { pins: MapPin[] }) {
               />
             </div>
             <div className="p-2">
-              <p className="truncate text-xs text-stone-500">
+              <p className="truncate text-xs text-stone-500 dark:text-stone-400">
                 {[p.city, p.country].filter(Boolean).join(", ") || "Pinned"}
               </p>
             </div>

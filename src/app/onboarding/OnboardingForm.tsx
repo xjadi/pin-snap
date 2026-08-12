@@ -70,10 +70,10 @@ export default function OnboardingForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <span className="block text-sm font-medium text-stone-700">
+        <span className="block text-sm font-medium text-stone-700 dark:text-stone-200">
           Avatar preview
         </span>
-        <div className="mt-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200">
+        <div className="mt-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200 dark:bg-stone-800">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -91,7 +91,7 @@ export default function OnboardingForm({
       </div>
 
       <div>
-        <span className="block text-sm font-medium text-stone-700">
+        <span className="block text-sm font-medium text-stone-700 dark:text-stone-200">
           Pick a preset
         </span>
         <div className="mt-2 grid grid-cols-6 gap-2">
@@ -101,7 +101,7 @@ export default function OnboardingForm({
               type="button"
               onClick={() => setAvatarUrl(url)}
               className={`overflow-hidden rounded-full ring-2 transition ${
-                avatarUrl === url ? "ring-amber-500" : "ring-stone-200 hover:ring-amber-300"
+                avatarUrl === url ? "ring-amber-500" : "ring-stone-200 hover:ring-amber-300 dark:ring-stone-700 dark:hover:ring-amber-400"
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -111,18 +111,18 @@ export default function OnboardingForm({
         </div>
       </div>
 
-      <label className="block text-sm font-medium text-stone-700">
+      <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
         …or paste an avatar image link
         <input
           type="url"
           value={avatarUrl.startsWith("https://api.dicebear.com") ? "" : avatarUrl}
           onChange={(e) => setAvatarUrl(e.target.value)}
           placeholder="https://…/your-avatar.png"
-          className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+          className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
         />
       </label>
 
-      <label className="block text-sm font-medium text-stone-700">
+      <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
         Display name
         <input
           type="text"
@@ -130,23 +130,23 @@ export default function OnboardingForm({
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="e.g. Somtum Lover"
-          className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+          className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
         />
       </label>
 
-      <label className="block text-sm font-medium text-stone-700">
-        Bio <span className="text-stone-400">(optional)</span>
+      <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
+        Bio <span className="text-stone-400 dark:text-stone-500">(optional)</span>
         <textarea
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           placeholder="A little about you and the places you love…"
           rows={3}
-          className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+          className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
         />
       </label>
 
       {error && (
-        <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>
+        <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{error}</p>
       )}
 
       <button

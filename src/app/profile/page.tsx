@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { MapPin } from "@/lib/pin";
 import UserMap from "@/app/users/UserMap";
 import ProfileEditor from "@/app/profile/ProfileEditor";
+import SummaryPanel from "@/components/SummaryPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,7 @@ export default async function ProfilePage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       {needsOnboarding && (
-        <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
           Heads up — pick a display name and avatar in the editor below so your pins
           are recognisable.
         </div>
@@ -63,12 +64,15 @@ export default async function ProfilePage() {
       <div className="mt-12">
         <h2 className="mb-4 text-xl font-bold tracking-tight">Your pins</h2>
         {pins.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-12 text-center text-stone-500">
+          <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-12 text-center text-stone-500 dark:border-stone-700 dark:bg-stone-900">
             <div className="text-4xl">🗺️</div>
             <p className="mt-3">You haven&apos;t pinned anything yet.</p>
           </div>
         ) : (
-          <UserMap pins={pins} />
+          <div className="space-y-6">
+            <SummaryPanel pins={pins} />
+            <UserMap pins={pins} />
+          </div>
         )}
       </div>
     </main>

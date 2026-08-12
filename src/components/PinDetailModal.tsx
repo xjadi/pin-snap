@@ -44,9 +44,9 @@ export default function PinDetailModal({
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-lg overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
+        className="w-full max-w-lg overflow-hidden rounded-t-3xl bg-white shadow-2xl dark:bg-stone-900 sm:rounded-3xl"
       >
-        <div className="relative max-h-[50vh] w-full bg-stone-100">
+        <div className="relative max-h-[50vh] w-full bg-stone-100 dark:bg-stone-800">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={pin.photo_url}
@@ -59,7 +59,7 @@ export default function PinDetailModal({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-stone-700 shadow hover:bg-white"
+            className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-stone-700 shadow hover:bg-white dark:bg-stone-800/90 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             ✕
           </button>
@@ -68,7 +68,7 @@ export default function PinDetailModal({
         <div className="space-y-4 p-5">
           <div className="flex items-center gap-3">
             <Link href={`/users/${pin.owner_id}`} className="shrink-0">
-              <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200">
+              <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200 dark:bg-stone-800">
                 {pin.owner_avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -84,11 +84,11 @@ export default function PinDetailModal({
             <div className="min-w-0">
               <Link
                 href={`/users/${pin.owner_id}`}
-                className="block truncate font-semibold text-stone-800 hover:underline"
+                className="block truncate font-semibold text-stone-800 hover:underline dark:text-stone-100"
               >
                 {pin.owner_display_name || "Pinner"}
               </Link>
-              <p className="truncate text-sm text-stone-500">
+              <p className="truncate text-sm text-stone-500 dark:text-stone-400">
                 {([pin.city, pin.country].filter(Boolean).join(", ") ||
                   "Pinned location")}
               </p>
@@ -97,7 +97,7 @@ export default function PinDetailModal({
 
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-400">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">
                 Memo
               </h3>
               {canEdit && !editing && (
@@ -117,7 +117,7 @@ export default function PinDetailModal({
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
                   placeholder="Write a memory about this spot…"
-                  className="w-full rounded-xl border border-stone-300 px-3 py-2 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  className="w-full rounded-xl border border-stone-300 px-3 py-2 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
                 />
                 <div className="flex gap-2">
                   <button
@@ -132,14 +132,14 @@ export default function PinDetailModal({
                       setNotes(pin.notes);
                       setEditing(false);
                     }}
-                    className="rounded-xl px-4 py-2 text-sm text-stone-500 hover:bg-stone-100"
+                    className="rounded-xl px-4 py-2 text-sm text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
                   >
                     Cancel
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="whitespace-pre-wrap rounded-xl bg-stone-50 p-3 text-stone-700">
+              <p className="whitespace-pre-wrap rounded-xl bg-stone-50 p-3 text-stone-700 dark:bg-stone-800 dark:text-stone-200">
                 {notes || (
                   <span className="italic text-stone-400">No memo yet.</span>
                 )}

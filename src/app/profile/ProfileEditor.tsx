@@ -70,9 +70,9 @@ export default function ProfileEditor({
   }
 
   return (
-    <section className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+    <section className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
-        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200">
+        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200 dark:bg-stone-800">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -93,7 +93,7 @@ export default function ProfileEditor({
                 type="button"
                 onClick={() => setAvatarUrl(url)}
                 className={`overflow-hidden rounded-full ring-2 transition ${
-                  avatarUrl === url ? "ring-amber-500" : "ring-stone-200 hover:ring-amber-300"
+                  avatarUrl === url ? "ring-amber-500" : "ring-stone-200 hover:ring-amber-300 dark:ring-stone-700 dark:hover:ring-amber-400"
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -102,19 +102,19 @@ export default function ProfileEditor({
             ))}
           </div>
 
-          <label className="block text-sm font-medium text-stone-700">
-            Avatar link <span className="text-stone-400">(or pick a preset)</span>
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
+            Avatar link <span className="text-stone-400 dark:text-stone-500">(or pick a preset)</span>
             <input
               type="url"
               value={avatarUrl.startsWith("https://api.dicebear.com") ? "" : avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
               placeholder="https://…/avatar.png"
-              className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
             />
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-medium text-stone-700">
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
               Display name
               <input
                 type="text"
@@ -122,29 +122,29 @@ export default function ProfileEditor({
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="e.g. Bangkok Explorer"
-                className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
               />
             </label>
 
-            <label className="block text-sm font-medium text-stone-700">
+            <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
               Email
               <input
                 type="text"
                 value={email}
                 disabled
-                className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-stone-400"
+                className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-500"
               />
             </label>
           </div>
 
-          <label className="block text-sm font-medium text-stone-700">
+          <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
             Bio
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={2}
               placeholder="A little about you…"
-              className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+              className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
             />
           </label>
 

@@ -123,7 +123,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
   return (
     <>
       <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
-        <div className="overflow-hidden rounded-3xl border border-stone-200 shadow-sm">
+        <div className="overflow-hidden rounded-3xl border border-stone-200 shadow-sm dark:border-stone-800">
           <MapView
             pins={pins}
             initialZoom={5}
@@ -133,9 +133,9 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
           />
         </div>
 
-        <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900">
           {!draft ? (
-            <div className="flex h-full flex-col items-center justify-center text-center text-stone-500">
+            <div className="flex h-full flex-col items-center justify-center text-center text-stone-500 dark:text-stone-400">
               <div className="text-4xl">📍</div>
               <p className="mt-3 max-w-xs">
                 Click anywhere on the map to drop a pin there. We&apos;ll guess the
@@ -144,9 +144,9 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
             </div>
           ) : (
             <form onSubmit={handleSave} className="space-y-4">
-              <div className="rounded-2xl bg-amber-50 p-3 text-sm">
-                <p className="font-medium text-amber-700">Pin location</p>
-                <p className="text-amber-800">
+              <div className="rounded-2xl bg-amber-50 p-3 text-sm dark:bg-amber-950/40">
+                <p className="font-medium text-amber-700 dark:text-amber-300">Pin location</p>
+                <p className="text-amber-800 dark:text-amber-200">
                   {reverseLoading ? (
                     <span className="inline-flex items-center gap-1">
                       <span className="h-2 w-2 animate-ping rounded-full bg-amber-500" />
@@ -157,12 +157,12 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
                     "Unknown spot"
                   )}
                 </p>
-                <p className="mt-1 font-mono text-xs text-amber-700/80">
+                <p className="mt-1 font-mono text-xs text-amber-700/80 dark:text-amber-300/80">
                   {draft.lat.toFixed(4)}, {draft.lng.toFixed(4)}
                 </p>
               </div>
 
-              <label className="block text-sm font-medium text-stone-700">
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
                 Photo link
                 <input
                   type="url"
@@ -170,12 +170,12 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
                   placeholder="https://…/photo.jpg"
-                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
                 />
               </label>
 
               {photoUrl && (
-                <div className="overflow-hidden rounded-2xl border border-stone-200">
+                <div className="overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-700">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photoUrl}
@@ -188,19 +188,19 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
                 </div>
               )}
 
-              <label className="block text-sm font-medium text-stone-700">
-                Memo <span className="text-stone-400">(optional)</span>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
+                Memo <span className="text-stone-400 dark:text-stone-500">(optional)</span>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
                   placeholder="What happened at this spot?"
-                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200"
+                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
                 />
               </label>
 
               {error && (
-                <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
+                <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
                   {error}
                 </p>
               )}
@@ -216,7 +216,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
               <button
                 type="button"
                 onClick={() => setDraft(null)}
-                className="w-full rounded-xl px-4 py-2 text-sm text-stone-500 hover:bg-stone-100"
+                className="w-full rounded-xl px-4 py-2 text-sm text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
               >
                 Cancel
               </button>

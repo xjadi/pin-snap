@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { MapPin } from "@/lib/pin";
 import HomeMap from "@/app/HomeMap";
+import SummaryPanel from "@/components/SummaryPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -45,13 +46,19 @@ export default async function HomePage() {
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
           Drop a photo. <span className="text-amber-600">Pin the place.</span>
         </h1>
-        <p className="mx-auto mt-2 max-w-xl text-stone-500">
+        <p className="mx-auto mt-2 max-w-xl text-stone-500 dark:text-stone-400">
           Everyone&apos;s memories, mapped. Hover a pin to peek the photo — click
           it to read the story. Centered on Thailand. 🇹🇭
         </p>
       </div>
 
       <HomeMap pins={pins} />
+
+      {pins.length > 0 && (
+        <div className="mt-8">
+          <SummaryPanel pins={pins} title="Community travel map" />
+        </div>
+      )}
     </main>
   );
 }

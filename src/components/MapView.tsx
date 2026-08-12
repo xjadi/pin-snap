@@ -3,6 +3,7 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import * as maplibregl from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 import type { MapPin } from "@/lib/pin";
 
 // Centered on Thailand by default.
@@ -15,6 +16,41 @@ interface MapViewProps {
   onMapClick?: (lng: number, lat: number) => void;
   onPinClick?: (pin: MapPin) => void;
   className?: string;
+}
+
+function basestyle(dark: boolean) {
+  const tiles = dark
+    ? [
+        "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
+      ]
+    : [
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+      ];
+  return {
+    version: 8 as const,
+    sources: {
+      basemap: {
+        type: "raster" as const,
+        tiles,
+        tileSize: 256,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      },
+    },
+    layers: [
+      {
+        id: "tiles",
+        type: "raster" as const,
+        source: "basemap",
+        minzoom: 0,
+        maxzoom: 20,
+      },
+    ],
+  };
 }
 
 export default function MapView({
@@ -31,6 +67,8 @@ export default function MapView({
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const handlersRef = useRef({ onMapClick, onPinClick });
   const [ready, setReady] = useState(false);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
     handlersRef.current = { onMapClick, onPinClick };
@@ -42,31 +80,7 @@ export default function MapView({
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          "carto-voyager": {
-            type: "raster",
-            tiles: [
-              "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-              "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-              "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-            ],
-            tileSize: 256,
-            attribution:
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-          },
-        },
-        layers: [
-          {
-            id: "voyager",
-            type: "raster",
-            source: "carto-voyager",
-            minzoom: 0,
-            maxzoom: 20,
-          },
-        ],
-      },
+      style: basestyle(resolvedTheme === "dark"),
       center: (initialCenter ?? [
         THAILAND_CENTER.lng,
         THAILAND_CENTER.lat,
@@ -98,6 +112,14 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Swap basemap when the theme changes.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const style = basestyle(isDark);
+    map.setStyle(style);
+  }, [isDark, ready]);
+
   // Sync markers when pins change.
   useEffect(() => {
     const map = mapRef.current;
@@ -116,19 +138,23 @@ export default function MapView({
 
       el.addEventListener("mouseenter", () => {
         popupRef.current?.remove();
+        const popupBg = isDark ? "#1c1917" : "#ffffff";
+        const popupText = isDark ? "#fafaf9" : "#1c1917";
+        const popupMuted = isDark ? "#a8a29e" : "#78716c";
+        const popupSub = isDark ? "#292524" : "#f5f5f4";
         const popup = new maplibregl.Popup({
           closeButton: false,
           closeOnClick: false,
           offset: 24,
           maxWidth: "240px",
         }).setHTML(`
-          <div class="w-[200px] overflow-hidden rounded-xl bg-white">
-            <div class="h-28 w-full bg-stone-100">
-              <img src="${escapeHtml(pin.photo_url)}" alt="pin" class="h-28 w-full object-cover" />
+          <div style="width:200px;overflow:hidden;border-radius:12px;background:${popupBg};">
+            <div style="height:112px;width:100%;background:${popupSub};">
+              <img src="${escapeHtml(pin.photo_url)}" alt="pin" style="height:112px;width:100%;object-fit:cover;" />
             </div>
-            <div class="px-3 py-2">
-              <p class="truncate text-sm font-semibold text-stone-800">${escapeHtml(pin.owner_display_name || "Pinner")}</p>
-              <p class="truncate text-xs text-stone-500">${escapeHtml([pin.city, pin.country].filter(Boolean).join(", ") || "Pinned location")}</p>
+            <div style="padding:8px 12px;">
+              <p style="margin:0;font-size:14px;font-weight:600;color:${popupText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(pin.owner_display_name || "Pinner")}</p>
+              <p style="margin:0;font-size:12px;color:${popupMuted};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml([pin.city, pin.country].filter(Boolean).join(", ") || "Pinned location")}</p>
             </div>
           </div>
         `);
@@ -166,7 +192,7 @@ export default function MapView({
         markersRef.current[pin.id].setLngLat([pin.lng, pin.lat]);
       }
     });
-  }, [pins, ready]);
+  }, [pins, ready, isDark]);
 
   void initialCenter;
   void initialZoom;
