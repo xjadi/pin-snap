@@ -10,6 +10,9 @@ export interface MapPin {
   owner_display_name: string;
   owner_avatar_url: string;
   owner_id: string;
+  title: string | null;
+  visited_at: string | null;
+  tags: string | null;
 }
 
 export interface CityCount {

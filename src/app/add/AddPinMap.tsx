@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MapView from "@/components/MapView";
-import PinDetailModal from "@/components/PinDetailModal";
+import PinDetailModal, { type PinEditPatch } from "@/components/PinDetailModal";
 import { createClient } from "@/lib/supabase/client";
-import { reverseGeocode } from "@/lib/geocode";
+import { reverseGeocode, searchPlace, type GeocodeResult } from "@/lib/geocode";
 import type { MapPin } from "@/lib/pin";
 
 export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) {
@@ -21,20 +21,110 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
   } | null>(null);
   const [reverseLoading, setReverseLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
+  const [title, setTitle] = useState("");
+  const [visitedAt, setVisitedAt] = useState("");
+  const [tags, setTags] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<MapPin | null>(null);
   const [myUserId, setMyUserId] = useState<string | null>(null);
 
+  // Relocate mode (full edit)
+  const [relocating, setRelocating] = useState(false);
+
+  // Place-name search
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<GeocodeResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
+
+  // Map fly-to
+  const [flyTo, setFlyTo] = useState<{
+    center: [number, number];
+    zoom?: number;
+    nonce: number;
+  } | null>(null);
+  const flyNonceRef = useRef(0);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setMyUserId(data.user?.id ?? null));
   }, [supabase]);
 
+  // Debounced search-as-you-type (min 3 chars, 400ms).
+  useEffect(() => {
+    const q = query.trim();
+    let cancelled = false;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    if (q.length < 3) {
+      t = setTimeout(() => {
+        if (cancelled) return;
+        setResults([]);
+        setShowDropdown(false);
+      }, 0);
+    } else {
+      t = setTimeout(async () => {
+        if (cancelled) return;
+        setSearching(true);
+        const r = await searchPlace(q);
+        if (cancelled) return;
+        setResults(r);
+        setShowDropdown(true);
+        setSearching(false);
+      }, 400);
+    }
+    return () => {
+      cancelled = true;
+      if (t) clearTimeout(t);
+    };
+  }, [query]);
+
+  // Click outside the search box closes the dropdown.
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (!searchBoxRef.current) return;
+      if (!searchBoxRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  function pickResult(r: GeocodeResult) {
+    setShowDropdown(false);
+    setQuery(r.displayName.split(",")[0]);
+    draftFromResult(r);
+    flyNonceRef.current += 1;
+    setFlyTo({ center: [r.lng, r.lat], zoom: 14, nonce: flyNonceRef.current });
+  }
+
+  function draftFromResult(r: GeocodeResult) {
+    setDraft({ lat: r.lat, lng: r.lng, city: r.city, country: r.country });
+  }
+
   async function handleMapClick(lng: number, lat: number) {
+    setError(null);
+    // Relocate the currently-open pin instead of creating a new draft.
+    if (relocating && active) {
+      setReverseLoading(true);
+      const place = await reverseGeocode(lat, lng);
+      setReverseLoading(false);
+      setRelocating(false);
+      setActive({
+        ...active,
+        lat,
+        lng,
+        city: place.city,
+        country: place.country,
+      });
+      flyNonceRef.current += 1;
+      setFlyTo({ center: [lng, lat], zoom: 14, nonce: flyNonceRef.current });
+      return;
+    }
     setDraft({ lat, lng, city: "", country: "" });
     setReverseLoading(true);
-    setError(null);
     const place = await reverseGeocode(lat, lng);
     setDraft({ lat, lng, city: place.city, country: place.country });
     setReverseLoading(false);
@@ -65,8 +155,13 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
         city: draft.city,
         country: draft.country,
         notes: notes.trim(),
+        title: title.trim() || null,
+        visited_at: visitedAt || null,
+        tags: tags.trim() || null,
       })
-      .select("id, photo_url, lat, lng, city, country, notes, created_at, user_id")
+      .select(
+        "id, photo_url, lat, lng, city, country, notes, created_at, user_id, title, visited_at, tags",
+      )
       .single();
 
     setSaving(false);
@@ -87,27 +182,80 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
       owner_id: data.user_id,
       owner_display_name: profile?.display_name ?? "Pinner",
       owner_avatar_url: profile?.avatar_url ?? "",
+      title: data.title,
+      visited_at: data.visited_at,
+      tags: data.tags,
     };
 
     setPins((prev) => [newPin, ...prev]);
     setDraft(null);
     setPhotoUrl("");
+    setTitle("");
+    setVisitedAt("");
+    setTags("");
     setNotes("");
     router.refresh();
   }
 
-  async function updateNotes(id: string, newNotes: string) {
-    const { error: upErr } = await supabase
+  async function updatePin(id: string, patch: PinEditPatch) {
+    const { data, error: upErr } = await supabase
       .from("pins")
-      .update({ notes: newNotes })
-      .eq("id", id);
-    if (upErr) return;
+      .update({
+        photo_url: patch.photo_url,
+        lat: patch.lat,
+        lng: patch.lng,
+        city: patch.city,
+        country: patch.country,
+        notes: patch.notes,
+        title: patch.title,
+        visited_at: patch.visited_at,
+        tags: patch.tags,
+      })
+      .eq("id", id)
+      .select(
+        "id, photo_url, lat, lng, city, country, notes, created_at, user_id, title, visited_at, tags",
+      )
+      .single();
+    if (upErr || !data) {
+      setError(upErr?.message ?? "Could not update pin.");
+      return;
+    }
     setPins((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, notes: newNotes } : p)),
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              photo_url: data.photo_url,
+              lat: data.lat,
+              lng: data.lng,
+              city: data.city,
+              country: data.country,
+              notes: data.notes,
+              title: data.title,
+              visited_at: data.visited_at,
+              tags: data.tags,
+            }
+          : p,
+      ),
     );
     setActive((prev) =>
-      prev && prev.id === id ? { ...prev, notes: newNotes } : prev,
+      prev && prev.id === id
+        ? {
+            ...prev,
+            photo_url: data.photo_url,
+            lat: data.lat,
+            lng: data.lng,
+            city: data.city,
+            country: data.country,
+            notes: data.notes,
+            title: data.title,
+            visited_at: data.visited_at,
+            tags: data.tags,
+          }
+        : prev,
     );
+    setRelocating(false);
+    router.refresh();
   }
 
   async function deletePin(id: string) {
@@ -115,6 +263,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
     if (delErr) return;
     setPins((prev) => prev.filter((p) => p.id !== id));
     setActive(null);
+    setRelocating(false);
     router.refresh();
   }
 
@@ -122,6 +271,52 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
 
   return (
     <>
+      {/* Place-name search (full width above the map) */}
+      <div ref={searchBoxRef} className="relative mb-4">
+        <div className="relative">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-stone-400">
+            🔎
+          </span>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => results.length && setShowDropdown(true)}
+            placeholder="Search a place — city, landmark, address…"
+            className="w-full rounded-full border border-stone-300 bg-white py-2.5 pl-11 pr-4 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder-stone-500"
+          />
+          {searching && (
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400">
+              <span className="h-2 w-2 animate-ping rounded-full bg-amber-500" />
+            </span>
+          )}
+        </div>
+
+        {showDropdown && results.length > 0 && (
+          <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-2xl border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-900">
+            {results.map((r, i) => (
+              <li key={`${r.lat},${r.lng}-${i}`}>
+                <button
+                  type="button"
+                  onClick={() => pickResult(r)}
+                  className="flex w-full items-start gap-2 px-4 py-2 text-left text-sm hover:bg-stone-50 dark:hover:bg-stone-800"
+                >
+                  <span className="text-stone-400">📍</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium text-stone-800 dark:text-stone-100">
+                      {r.displayName.split(",")[0]}
+                    </span>
+                    <span className="block truncate text-xs text-stone-500 dark:text-stone-400">
+                      {r.displayName}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
         <div className="overflow-hidden rounded-3xl border border-stone-200 shadow-sm dark:border-stone-800">
           <MapView
@@ -129,6 +324,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
             initialZoom={5}
             onMapClick={handleMapClick}
             onPinClick={(pin) => setActive(pin)}
+            flyTo={flyTo ?? undefined}
             className="h-[60vh] w-full"
           />
         </div>
@@ -138,8 +334,8 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
             <div className="flex h-full flex-col items-center justify-center text-center text-stone-500 dark:text-stone-400">
               <div className="text-4xl">📍</div>
               <p className="mt-3 max-w-xs">
-                Click anywhere on the map to drop a pin there. We&apos;ll guess the
-                city and country for you.
+                Search a place above, or click anywhere on the map to drop a pin.
+                We&apos;ll guess the city and country for you.
               </p>
             </div>
           ) : (
@@ -153,8 +349,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
                       Looking up the place…
                     </span>
                   ) : (
-                    [draft.city, draft.country].filter(Boolean).join(", ") ||
-                    "Unknown spot"
+                    [draft.city, draft.country].filter(Boolean).join(", ") || "Unknown spot"
                   )}
                 </p>
                 <p className="mt-1 font-mono text-xs text-amber-700/80 dark:text-amber-300/80">
@@ -187,6 +382,39 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
                   />
                 </div>
               )}
+
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
+                Title <span className="text-stone-400 dark:text-stone-500">(optional)</span>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Sunset at Wat Arun"
+                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                />
+              </label>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
+                  Date visited <span className="text-stone-400 dark:text-stone-500">(optional)</span>
+                  <input
+                    type="date"
+                    value={visitedAt}
+                    onChange={(e) => setVisitedAt(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
+                  Tags <span className="text-stone-400 dark:text-stone-500">(comma-separated)</span>
+                  <input
+                    type="text"
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    placeholder="food, temple, hike"
+                    className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                  />
+                </label>
+              </div>
 
               <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
                 Memo <span className="text-stone-400 dark:text-stone-500">(optional)</span>
@@ -229,9 +457,14 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
         <PinDetailModal
           key={active.id}
           pin={active}
-          onClose={() => setActive(null)}
+          onClose={() => {
+            setActive(null);
+            setRelocating(false);
+          }}
           canEdit={Boolean(isActiveMine)}
-          onSaveNotes={async (n) => updateNotes(active.id, n)}
+          onSave={isActiveMine ? (patch) => updatePin(active.id, patch) : undefined}
+          onRelocate={() => setRelocating((v) => !v)}
+          relocating={relocating}
         />
       )}
 
@@ -239,7 +472,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
         <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[110] flex justify-center px-4">
           <button
             onClick={() => deletePin(active!.id)}
-            className="pointer-events-auto rounded-full bg-rose-50 px-4 py-2 text-sm font-medium text-rose-600 shadow ring-1 ring-rose-200 hover:bg-rose-100"
+            className="pointer-events-auto rounded-full bg-rose-50 px-4 py-2 text-sm font-medium text-rose-600 shadow ring-1 ring-rose-200 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-800"
           >
             Delete this pin
           </button>

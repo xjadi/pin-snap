@@ -19,7 +19,7 @@ export default async function AddPinPage() {
   const pins = await supabase
     .from("pins")
     .select(
-      "id, photo_url, lat, lng, city, country, notes, created_at, user_id, profiles!inner ( display_name, avatar_url )",
+      "id, photo_url, lat, lng, city, country, notes, created_at, user_id, title, visited_at, tags, profiles!inner ( display_name, avatar_url )",
     )
     .order("created_at", { ascending: false });
 
@@ -39,6 +39,9 @@ export default async function AddPinPage() {
       owner_id: r.user_id,
       owner_display_name: prof?.display_name ?? profile?.display_name ?? "Pinner",
       owner_avatar_url: prof?.avatar_url ?? profile?.avatar_url ?? "",
+      title: r.title,
+      visited_at: r.visited_at,
+      tags: r.tags,
     };
   });
 

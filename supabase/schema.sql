@@ -91,3 +91,16 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- =====================================================================
+-- Migration: optional pin fields — title, visited_at, tags
+-- Run these in the Supabase SQL editor (safe to re-run).
+-- =====================================================================
+alter table public.pins
+  add column if not exists title text;
+
+alter table public.pins
+  add column if not exists visited_at date;
+
+alter table public.pins
+  add column if not exists tags text;

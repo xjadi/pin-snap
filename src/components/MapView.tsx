@@ -16,6 +16,7 @@ interface MapViewProps {
   onMapClick?: (lng: number, lat: number) => void;
   onPinClick?: (pin: MapPin) => void;
   className?: string;
+  flyTo?: { center: [number, number]; zoom?: number; nonce: number };
 }
 
 function basestyle(dark: boolean) {
@@ -60,6 +61,7 @@ export default function MapView({
   onMapClick,
   onPinClick,
   className = "h-[70vh] w-full",
+  flyTo,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -119,6 +121,18 @@ export default function MapView({
     const style = basestyle(isDark);
     map.setStyle(style);
   }, [isDark, ready]);
+
+  // Fly to a requested location when flyTo.nonce changes.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || !flyTo) return;
+    map.flyTo({
+      center: flyTo.center,
+      zoom: flyTo.zoom ?? 14,
+      duration: 800,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flyTo?.nonce, ready]);
 
   // Sync markers when pins change.
   useEffect(() => {

@@ -42,6 +42,9 @@ export interface Database {
           country: string;
           notes: string;
           created_at: string;
+          title: string | null;
+          visited_at: string | null;
+          tags: string | null;
         };
         Insert: {
           id?: string;
@@ -52,6 +55,9 @@ export interface Database {
           city?: string;
           country?: string;
           notes?: string;
+          title?: string | null;
+          visited_at?: string | null;
+          tags?: string | null;
         };
         Update: {
           id?: string;
@@ -62,6 +68,9 @@ export interface Database {
           city?: string;
           country?: string;
           notes?: string;
+          title?: string | null;
+          visited_at?: string | null;
+          tags?: string | null;
         };
         Relationships: [
           {
