@@ -24,6 +24,7 @@ export default function PinDetailModal({
   onSave,
   onRelocate,
   relocating,
+  onDelete,
 }: {
   pin: MapPin;
   onClose: () => void;
@@ -36,10 +37,14 @@ export default function PinDetailModal({
   onRelocate?: () => void;
   /** True while the parent is waiting for the next map click to relocate this pin. */
   relocating?: boolean;
+  /** Delete this pin. If provided, a Delete button appears for owners. */
+  onDelete?: (id: string) => Promise<void>;
 }) {
   const [notes, setNotes] = useState(pin.notes);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
   // Full-edit form state (only used when onSave provided)
@@ -98,6 +103,14 @@ export default function PinDetailModal({
   function cancelEdit() {
     setEditing(false);
     setNotes(pin.notes);
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    await onDelete?.(pin.id);
+    setDeleting(false);
+    setConfirmDelete(false);
+    onClose();
   }
 
   const tagList = (pin.tags ?? "").split(",").map((t) => t.trim()).filter(Boolean);
@@ -354,6 +367,41 @@ export default function PinDetailModal({
                     </span>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {canEdit && onDelete && !editing && (
+            <div className="border-t border-stone-100 pt-3 dark:border-stone-800">
+              {confirmDelete ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-rose-700 dark:text-rose-300">
+                    Delete this pin? This can&apos;t be undone.
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-60"
+                    >
+                      {deleting ? "Deleting…" : "Delete"}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      disabled={deleting}
+                      className="rounded-xl px-3 py-1.5 text-sm text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
+                    >
+                      Keep
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="text-sm font-medium text-rose-600 hover:underline dark:text-rose-400"
+                >
+                  Delete pin
+                </button>
               )}
             </div>
           )}

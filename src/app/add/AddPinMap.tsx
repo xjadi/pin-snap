@@ -5,12 +5,16 @@ import { useRouter } from "next/navigation";
 import MapView from "@/components/MapView";
 import PinDetailModal, { type PinEditPatch } from "@/components/PinDetailModal";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
+import { usePinMutations } from "@/lib/usePinMutations";
 import { reverseGeocode, searchPlace, type GeocodeResult } from "@/lib/geocode";
 import type { MapPin } from "@/lib/pin";
 
 export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) {
   const router = useRouter();
   const supabase = createClient();
+  const { user, loading: authLoading } = useAuth();
+  const { updatePin: updatePinMut, deletePin: deletePinMut } = usePinMutations();
 
   const [pins, setPins] = useState<MapPin[]>(existingPins);
   const [draft, setDraft] = useState<{
@@ -28,7 +32,6 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<MapPin | null>(null);
-  const [myUserId, setMyUserId] = useState<string | null>(null);
 
   // Relocate mode (full edit)
   const [relocating, setRelocating] = useState(false);
@@ -47,10 +50,6 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
     nonce: number;
   } | null>(null);
   const flyNonceRef = useRef(0);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setMyUserId(data.user?.id ?? null));
-  }, [supabase]);
 
   // Debounced search-as-you-type (min 3 chars, 400ms).
   useEffect(() => {
@@ -198,76 +197,19 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
   }
 
   async function updatePin(id: string, patch: PinEditPatch) {
-    const { data, error: upErr } = await supabase
-      .from("pins")
-      .update({
-        photo_url: patch.photo_url,
-        lat: patch.lat,
-        lng: patch.lng,
-        city: patch.city,
-        country: patch.country,
-        notes: patch.notes,
-        title: patch.title,
-        visited_at: patch.visited_at,
-        tags: patch.tags,
-      })
-      .eq("id", id)
-      .select(
-        "id, photo_url, lat, lng, city, country, notes, created_at, user_id, title, visited_at, tags",
-      )
-      .single();
-    if (upErr || !data) {
-      setError(upErr?.message ?? "Could not update pin.");
-      return;
-    }
-    setPins((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              photo_url: data.photo_url,
-              lat: data.lat,
-              lng: data.lng,
-              city: data.city,
-              country: data.country,
-              notes: data.notes,
-              title: data.title,
-              visited_at: data.visited_at,
-              tags: data.tags,
-            }
-          : p,
-      ),
-    );
-    setActive((prev) =>
-      prev && prev.id === id
-        ? {
-            ...prev,
-            photo_url: data.photo_url,
-            lat: data.lat,
-            lng: data.lng,
-            city: data.city,
-            country: data.country,
-            notes: data.notes,
-            title: data.title,
-            visited_at: data.visited_at,
-            tags: data.tags,
-          }
-        : prev,
-    );
+    const { ok } = await updatePinMut(id, patch, { setPins, setActive });
+    if (!ok) setError("Could not update pin.");
     setRelocating(false);
-    router.refresh();
   }
 
   async function deletePin(id: string) {
-    const { error: delErr } = await supabase.from("pins").delete().eq("id", id);
-    if (delErr) return;
-    setPins((prev) => prev.filter((p) => p.id !== id));
-    setActive(null);
+    const { ok } = await deletePinMut(id, { setPins, setActive });
+    if (!ok) setError("Could not delete pin.");
     setRelocating(false);
-    router.refresh();
   }
 
-  const isActiveMine = active && myUserId && active.owner_id === myUserId;
+  const isActiveMine =
+    !authLoading && Boolean(user && active && active.owner_id === user.id);
 
   return (
     <>
@@ -463,20 +405,10 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
           }}
           canEdit={Boolean(isActiveMine)}
           onSave={isActiveMine ? (patch) => updatePin(active.id, patch) : undefined}
-          onRelocate={() => setRelocating((v) => !v)}
+          onDelete={isActiveMine ? (id) => deletePin(id) : undefined}
+          onRelocate={isActiveMine ? () => setRelocating((v) => !v) : undefined}
           relocating={relocating}
         />
-      )}
-
-      {isActiveMine && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[110] flex justify-center px-4">
-          <button
-            onClick={() => deletePin(active!.id)}
-            className="pointer-events-auto rounded-full bg-rose-50 px-4 py-2 text-sm font-medium text-rose-600 shadow ring-1 ring-rose-200 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-800"
-          >
-            Delete this pin
-          </button>
-        </div>
       )}
     </>
   );

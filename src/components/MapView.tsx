@@ -66,11 +66,20 @@ export default function MapView({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<Record<string, maplibregl.Marker>>({});
-  const popupRef = useRef<maplibregl.Popup | null>(null);
+  const activePopupRef = useRef<maplibregl.Popup | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popupBoundRef = useRef<Set<string>>(new Set());
   const handlersRef = useRef({ onMapClick, onPinClick });
   const [ready, setReady] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+
+  function clearCloseTimer() {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }
 
   useEffect(() => {
     handlersRef.current = { onMapClick, onPinClick };
@@ -107,6 +116,9 @@ export default function MapView({
     return () => {
       Object.values(markersRef.current).forEach((m) => m.remove());
       markersRef.current = {};
+      popupBoundRef.current = new Set();
+      clearCloseTimer();
+      activePopupRef.current = null;
       map.remove();
       mapRef.current = null;
       setReady(false);
@@ -139,52 +151,87 @@ export default function MapView({
     const map = mapRef.current;
     if (!map || !ready) return;
 
+    const popupHtmlInner = (pin: MapPin) => {
+      const popupBg = isDark ? "#1c1917" : "#ffffff";
+      const popupText = isDark ? "#fafaf9" : "#1c1917";
+      const popupMuted = isDark ? "#a8a29e" : "#78716c";
+      const popupSub = isDark ? "#292524" : "#f5f5f4";
+      return `
+        <div style="width:200px;overflow:hidden;border-radius:12px;background:${popupBg};">
+          <div style="height:112px;width:100%;background:${popupSub};">
+            <img src="${escapeHtml(pin.photo_url)}" alt="pin" style="height:112px;width:100%;object-fit:cover;" />
+          </div>
+          <div style="padding:8px 12px;">
+            <p style="margin:0;font-size:14px;font-weight:600;color:${popupText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(pin.owner_display_name || "Pinner")}</p>
+            <p style="margin:0;font-size:12px;color:${popupMuted};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml([pin.city, pin.country].filter(Boolean).join(", ") || "Pinned location")}</p>
+          </div>
+        </div>
+      `;
+    };
+
     const setUpMarker = (pin: MapPin) => {
       const el = document.createElement("button");
+      // No transform on hover — keeps the hit box stable so the popup
+      // doesn't flicker on enter/leave at marker edges.
       el.className =
-        "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-base shadow-lg transition hover:scale-110 hover:bg-amber-600 focus:outline-none";
+        "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-base shadow-lg transition hover:bg-amber-600 focus:outline-none";
       el.innerHTML = "📌";
       el.title = "Pin";
 
+      const popup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 24,
+        maxWidth: "240px",
+      }).setHTML(popupHtmlInner(pin));
+
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat([pin.lng, pin.lat])
+        .setPopup(popup)
         .addTo(map);
 
-      el.addEventListener("mouseenter", () => {
-        popupRef.current?.remove();
-        const popupBg = isDark ? "#1c1917" : "#ffffff";
-        const popupText = isDark ? "#fafaf9" : "#1c1917";
-        const popupMuted = isDark ? "#a8a29e" : "#78716c";
-        const popupSub = isDark ? "#292524" : "#f5f5f4";
-        const popup = new maplibregl.Popup({
-          closeButton: false,
-          closeOnClick: false,
-          offset: 24,
-          maxWidth: "240px",
-        }).setHTML(`
-          <div style="width:200px;overflow:hidden;border-radius:12px;background:${popupBg};">
-            <div style="height:112px;width:100%;background:${popupSub};">
-              <img src="${escapeHtml(pin.photo_url)}" alt="pin" style="height:112px;width:100%;object-fit:cover;" />
-            </div>
-            <div style="padding:8px 12px;">
-              <p style="margin:0;font-size:14px;font-weight:600;color:${popupText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(pin.owner_display_name || "Pinner")}</p>
-              <p style="margin:0;font-size:12px;color:${popupMuted};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml([pin.city, pin.country].filter(Boolean).join(", ") || "Pinned location")}</p>
-            </div>
-          </div>
-        `);
-        popup.setLngLat([pin.lng, pin.lat]).addTo(map);
-        popupRef.current = popup;
-      });
+      const openPopup = () => {
+        clearCloseTimer();
+        if (activePopupRef.current && activePopupRef.current !== popup) {
+          activePopupRef.current.remove();
+        }
+        if (!popup.isOpen()) {
+          popup.addTo(map);
+        }
+        activePopupRef.current = popup;
+
+        // Bind popup hover handlers once (after the element exists).
+        if (!popupBoundRef.current.has(pin.id)) {
+          const popupEl = popup.getElement();
+          if (popupEl) {
+            popupEl.addEventListener("mouseenter", clearCloseTimer);
+            popupEl.addEventListener("mouseleave", () => {
+              clearCloseTimer();
+              closeTimerRef.current = setTimeout(() => {
+                popup.remove();
+                if (activePopupRef.current === popup) activePopupRef.current = null;
+              }, 150);
+            });
+            popupBoundRef.current.add(pin.id);
+          }
+        }
+      };
+
+      el.addEventListener("mouseenter", openPopup);
 
       el.addEventListener("mouseleave", () => {
-        popupRef.current?.remove();
-        popupRef.current = null;
+        clearCloseTimer();
+        closeTimerRef.current = setTimeout(() => {
+          popup.remove();
+          if (activePopupRef.current === popup) activePopupRef.current = null;
+        }, 150);
       });
 
       el.addEventListener("click", (ev) => {
         ev.stopPropagation();
-        popupRef.current?.remove();
-        popupRef.current = null;
+        clearCloseTimer();
+        popup.remove();
+        if (activePopupRef.current === popup) activePopupRef.current = null;
         handlersRef.current.onPinClick?.(pin);
       });
 
@@ -196,6 +243,7 @@ export default function MapView({
       if (!pins.find((p) => p.id === id)) {
         marker.remove();
         delete markersRef.current[id];
+        popupBoundRef.current.delete(id);
       }
     });
 
@@ -203,7 +251,11 @@ export default function MapView({
       if (!markersRef.current[pin.id]) {
         markersRef.current[pin.id] = setUpMarker(pin);
       } else {
-        markersRef.current[pin.id].setLngLat([pin.lng, pin.lat]);
+        const existing = markersRef.current[pin.id];
+        existing.setLngLat([pin.lng, pin.lat]);
+        // Refresh popup HTML for theme/content changes without rebuilding
+        // the popup (keeps the <img> element alive — no re-fetch flicker).
+        existing.getPopup()?.setHTML(popupHtmlInner(pin));
       }
     });
   }, [pins, ready, isDark]);
