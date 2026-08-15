@@ -1,8 +1,10 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 
 export function ThemeToggle() {
+  const t = useTranslations("Theme");
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
@@ -10,9 +12,9 @@ export function ThemeToggle() {
     <button
       type="button"
       suppressHydrationWarning
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={isDark ? t("toggleLight") : t("toggleDark")}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="rounded-full px-3 py-1.5 text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
+      className="rounded-full px-3 py-1.5 text-ink-muted hover:bg-surface-2 hover:text-ink"
     >
       <span aria-hidden className="text-base">
         {isDark ? "☀️" : "🌙"}

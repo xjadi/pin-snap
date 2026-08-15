@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import MapView from "@/components/MapView";
 import PinDetailModal, { type PinEditPatch } from "@/components/PinDetailModal";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +12,7 @@ import { reverseGeocode, searchPlace, type GeocodeResult } from "@/lib/geocode";
 import type { MapPin } from "@/lib/pin";
 
 export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) {
+  const t = useTranslations();
   const router = useRouter();
   const supabase = createClient();
   const { user, loading: authLoading } = useAuth();
@@ -32,18 +34,14 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<MapPin | null>(null);
-
-  // Relocate mode (full edit)
   const [relocating, setRelocating] = useState(false);
 
-  // Place-name search
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
 
-  // Map fly-to
   const [flyTo, setFlyTo] = useState<{
     center: [number, number];
     zoom?: number;
@@ -51,7 +49,6 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
   } | null>(null);
   const flyNonceRef = useRef(0);
 
-  // Debounced search-as-you-type (min 3 chars, 400ms).
   useEffect(() => {
     const q = query.trim();
     let cancelled = false;
@@ -79,7 +76,6 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
     };
   }, [query]);
 
-  // Click outside the search box closes the dropdown.
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (!searchBoxRef.current) return;
@@ -94,18 +90,13 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
   function pickResult(r: GeocodeResult) {
     setShowDropdown(false);
     setQuery(r.displayName.split(",")[0]);
-    draftFromResult(r);
+    setDraft({ lat: r.lat, lng: r.lng, city: r.city, country: r.country });
     flyNonceRef.current += 1;
     setFlyTo({ center: [r.lng, r.lat], zoom: 14, nonce: flyNonceRef.current });
   }
 
-  function draftFromResult(r: GeocodeResult) {
-    setDraft({ lat: r.lat, lng: r.lng, city: r.city, country: r.country });
-  }
-
   async function handleMapClick(lng: number, lat: number) {
     setError(null);
-    // Relocate the currently-open pin instead of creating a new draft.
     if (relocating && active) {
       setReverseLoading(true);
       const place = await reverseGeocode(lat, lng);
@@ -139,7 +130,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setError("Sign in first to add a pin.");
+      setError(t("Auth.signInFirst"));
       setSaving(false);
       return;
     }
@@ -166,7 +157,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
     setSaving(false);
 
     if (insertError || !data) {
-      setError(insertError?.message ?? "Could not save pin.");
+      setError(insertError?.message ?? t("Errors.couldNotSavePin"));
       return;
     }
 
@@ -179,7 +170,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
     const newPin: MapPin = {
       ...data,
       owner_id: data.user_id,
-      owner_display_name: profile?.display_name ?? "Pinner",
+      owner_display_name: profile?.display_name ?? t("Fallback.pinner"),
       owner_avatar_url: profile?.avatar_url ?? "",
       title: data.title,
       visited_at: data.visited_at,
@@ -198,25 +189,29 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
 
   async function updatePin(id: string, patch: PinEditPatch) {
     const { ok } = await updatePinMut(id, patch, { setPins, setActive });
-    if (!ok) setError("Could not update pin.");
+    if (!ok) setError(t("Errors.couldNotUpdatePin"));
     setRelocating(false);
   }
 
   async function deletePin(id: string) {
     const { ok } = await deletePinMut(id, { setPins, setActive });
-    if (!ok) setError("Could not delete pin.");
+    if (!ok) setError(t("Errors.couldNotDeletePin"));
     setRelocating(false);
   }
 
   const isActiveMine =
     !authLoading && Boolean(user && active && active.owner_id === user.id);
 
+  const inputClass =
+    "mt-1 w-full rounded-xl border border-border bg-surface px-4 py-2.5 outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20";
+  const labelClass = "block text-sm font-medium text-ink";
+
   return (
     <>
-      {/* Place-name search (full width above the map) */}
+      {/* Place-name search */}
       <div ref={searchBoxRef} className="relative mb-4">
         <div className="relative">
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-stone-400">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted">
             🔎
           </span>
           <input
@@ -224,31 +219,31 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => results.length && setShowDropdown(true)}
-            placeholder="Search a place — city, landmark, address…"
-            className="w-full rounded-full border border-stone-300 bg-white py-2.5 pl-11 pr-4 text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder-stone-500"
+            placeholder={t("Add.searchPlaceholder")}
+            className="w-full rounded-full border border-border bg-surface py-2.5 pl-11 pr-4 text-sm outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20"
           />
           {searching && (
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400">
-              <span className="h-2 w-2 animate-ping rounded-full bg-amber-500" />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2">
+              <span className="h-2 w-2 animate-ping rounded-full bg-magenta" />
             </span>
           )}
         </div>
 
         {showDropdown && results.length > 0 && (
-          <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-2xl border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-900">
+          <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-2xl border border-border bg-surface py-1 shadow-lg">
             {results.map((r, i) => (
               <li key={`${r.lat},${r.lng}-${i}`}>
                 <button
                   type="button"
                   onClick={() => pickResult(r)}
-                  className="flex w-full items-start gap-2 px-4 py-2 text-left text-sm hover:bg-stone-50 dark:hover:bg-stone-800"
+                  className="flex w-full items-start gap-2 px-4 py-2 text-left text-sm hover:bg-surface-2"
                 >
-                  <span className="text-stone-400">📍</span>
+                  <span className="text-ink-muted">📍</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium text-stone-800 dark:text-stone-100">
+                    <span className="block truncate font-medium">
                       {r.displayName.split(",")[0]}
                     </span>
-                    <span className="block truncate text-xs text-stone-500 dark:text-stone-400">
+                    <span className="block truncate text-xs text-ink-muted">
                       {r.displayName}
                     </span>
                   </span>
@@ -260,59 +255,56 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
-        <div className="overflow-hidden rounded-3xl border border-stone-200 shadow-sm dark:border-stone-800">
+        <div className="polaroid">
           <MapView
             pins={pins}
             initialZoom={5}
             onMapClick={handleMapClick}
             onPinClick={(pin) => setActive(pin)}
             flyTo={flyTo ?? undefined}
-            className="h-[60vh] w-full"
+            className="h-[55vh] w-full"
           />
         </div>
 
-        <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900">
+        <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           {!draft ? (
-            <div className="flex h-full flex-col items-center justify-center text-center text-stone-500 dark:text-stone-400">
+            <div className="flex h-full flex-col items-center justify-center text-center text-ink-muted">
               <div className="text-4xl">📍</div>
-              <p className="mt-3 max-w-xs">
-                Search a place above, or click anywhere on the map to drop a pin.
-                We&apos;ll guess the city and country for you.
-              </p>
+              <p className="mt-3 max-w-xs">{t("Add.emptyDraft")}</p>
             </div>
           ) : (
             <form onSubmit={handleSave} className="space-y-4">
-              <div className="rounded-2xl bg-amber-50 p-3 text-sm dark:bg-amber-950/40">
-                <p className="font-medium text-amber-700 dark:text-amber-300">Pin location</p>
-                <p className="text-amber-800 dark:text-amber-200">
+              <div className="rounded-xl bg-sun/10 p-3 text-sm">
+                <p className="font-semibold text-sun">{t("Add.pinLocation")}</p>
+                <p className="text-ink">
                   {reverseLoading ? (
                     <span className="inline-flex items-center gap-1">
-                      <span className="h-2 w-2 animate-ping rounded-full bg-amber-500" />
-                      Looking up the place…
+                      <span className="h-2 w-2 animate-ping rounded-full bg-sun" />
+                      {t("Add.lookingUp")}
                     </span>
                   ) : (
-                    [draft.city, draft.country].filter(Boolean).join(", ") || "Unknown spot"
+                    [draft.city, draft.country].filter(Boolean).join(", ") || t("Add.unknownSpot")
                   )}
                 </p>
-                <p className="mt-1 font-mono text-xs text-amber-700/80 dark:text-amber-300/80">
+                <p className="mt-1 font-mono text-xs text-ink-muted">
                   {draft.lat.toFixed(4)}, {draft.lng.toFixed(4)}
                 </p>
               </div>
 
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-                Photo link
+              <label className={labelClass}>
+                {t("Add.photoLink")}
                 <input
                   type="url"
                   required
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
-                  placeholder="https://…/photo.jpg"
-                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+                  placeholder={t("Add.photoPlaceholder")}
+                  className={inputClass}
                 />
               </label>
 
               {photoUrl && (
-                <div className="overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-700">
+                <div className="overflow-hidden rounded-xl border border-border">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photoUrl}
@@ -325,70 +317,68 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
                 </div>
               )}
 
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-                Title <span className="text-stone-400 dark:text-stone-500">(optional)</span>
+              <label className={labelClass}>
+                {t("Add.title")} <span className="text-ink-muted">{t("Common.optional")}</span>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Sunset at Wat Arun"
-                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                  placeholder={t("Add.titlePlaceholder")}
+                  className={inputClass}
                 />
               </label>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-                  Date visited <span className="text-stone-400 dark:text-stone-500">(optional)</span>
+                <label className={labelClass}>
+                  {t("Add.dateVisited")} <span className="text-ink-muted">{t("Common.optional")}</span>
                   <input
                     type="date"
                     value={visitedAt}
                     onChange={(e) => setVisitedAt(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                    className={inputClass}
                   />
                 </label>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-                  Tags <span className="text-stone-400 dark:text-stone-500">(comma-separated)</span>
+                <label className={labelClass}>
+                  {t("Add.tags")} <span className="text-ink-muted">{t("Add.commaSeparated")}</span>
                   <input
                     type="text"
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
-                    placeholder="food, temple, hike"
-                    className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                    placeholder={t("Add.tagsPlaceholder")}
+                    className={inputClass}
                   />
                 </label>
               </div>
 
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-                Memo <span className="text-stone-400 dark:text-stone-500">(optional)</span>
+              <label className={labelClass}>
+                {t("Add.memo")} <span className="text-ink-muted">{t("Common.optional")}</span>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  placeholder="What happened at this spot?"
-                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+                  placeholder={t("Add.memoPlaceholder")}
+                  className={inputClass}
                 />
               </label>
 
               {error && (
-                <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
-                  {error}
-                </p>
+                <p className="rounded-xl bg-danger/10 p-3 text-sm text-danger">{error}</p>
               )}
 
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full rounded-xl bg-amber-500 px-4 py-2.5 font-medium text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-60"
+                className="w-full rounded-xl bg-magenta px-4 py-2.5 font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
               >
-                {saving ? "Saving…" : "Save pin"}
+                {saving ? t("Add.saving") : t("Add.save")}
               </button>
 
               <button
                 type="button"
                 onClick={() => setDraft(null)}
-                className="w-full rounded-xl px-4 py-2 text-sm text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
+                className="w-full rounded-xl px-4 py-2 text-sm text-ink-muted hover:bg-surface-2"
               >
-                Cancel
+                {t("Add.cancel")}
               </button>
             </form>
           )}

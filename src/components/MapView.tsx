@@ -17,6 +17,10 @@ interface MapViewProps {
   onPinClick?: (pin: MapPin) => void;
   className?: string;
   flyTo?: { center: [number, number]; zoom?: number; nonce: number };
+  fitBounds?: {
+    bounds: [[number, number], [number, number]];
+    nonce: number;
+  };
 }
 
 function basestyle(dark: boolean) {
@@ -62,6 +66,7 @@ export default function MapView({
   onPinClick,
   className = "h-[70vh] w-full",
   flyTo,
+  fitBounds,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -146,16 +151,28 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flyTo?.nonce, ready]);
 
+  // Fit to a bounding box when fitBounds.nonce changes.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || !fitBounds) return;
+    map.fitBounds(fitBounds.bounds, {
+      padding: 60,
+      maxZoom: 14,
+      duration: 800,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fitBounds?.nonce, ready]);
+
   // Sync markers when pins change.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
 
     const popupHtmlInner = (pin: MapPin) => {
-      const popupBg = isDark ? "#1c1917" : "#ffffff";
-      const popupText = isDark ? "#fafaf9" : "#1c1917";
-      const popupMuted = isDark ? "#a8a29e" : "#78716c";
-      const popupSub = isDark ? "#292524" : "#f5f5f4";
+      const popupBg = isDark ? "#1a140f" : "#ffffff";
+      const popupText = isDark ? "#fbf5ec" : "#16110b";
+      const popupMuted = isDark ? "#a89684" : "#6b5e4d";
+      const popupSub = isDark ? "#2a1f17" : "#f5eddf";
       return `
         <div style="width:200px;overflow:hidden;border-radius:12px;background:${popupBg};">
           <div style="height:112px;width:100%;background:${popupSub};">
@@ -174,7 +191,7 @@ export default function MapView({
       // No transform on hover — keeps the hit box stable so the popup
       // doesn't flicker on enter/leave at marker edges.
       el.className =
-        "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-base shadow-lg transition hover:bg-amber-600 focus:outline-none";
+        "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-sun text-base shadow-lg transition hover:opacity-80 focus:outline-none";
       el.innerHTML = "📌";
       el.title = "Pin";
 

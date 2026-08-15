@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { MapPin } from "@/lib/pin";
 
 export interface PinEditPatch {
@@ -20,7 +21,6 @@ export default function PinDetailModal({
   pin,
   onClose,
   canEdit,
-  onSaveNotes,
   onSave,
   onRelocate,
   relocating,
@@ -29,31 +29,24 @@ export default function PinDetailModal({
   pin: MapPin;
   onClose: () => void;
   canEdit?: boolean;
-  /** Legacy notes-only save (kept for callers that didn't migrate yet). */
-  onSaveNotes?: (notes: string) => Promise<void>;
-  /** Full-row save. If provided, the Edit button switches to full-edit mode. */
   onSave?: (patch: PinEditPatch) => Promise<void>;
-  /** Ask the parent to enter "relocate" mode (next map click updates this pin). */
   onRelocate?: () => void;
-  /** True while the parent is waiting for the next map click to relocate this pin. */
   relocating?: boolean;
-  /** Delete this pin. If provided, a Delete button appears for owners. */
   onDelete?: (id: string) => Promise<void>;
 }) {
+  const t = useTranslations();
   const [notes, setNotes] = useState(pin.notes);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-
-  // Full-edit form state (only used when onSave provided)
   const [photoUrl, setPhotoUrl] = useState(pin.photo_url);
   const [title, setTitle] = useState(pin.title ?? "");
   const [visitedAt, setVisitedAt] = useState(pin.visited_at ?? "");
   const [tags, setTags] = useState(pin.tags ?? "");
   const [city, setCity] = useState(pin.city);
   const [country, setCountry] = useState(pin.country);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const fullEdit = Boolean(canEdit && onSave);
 
@@ -64,13 +57,6 @@ export default function PinDetailModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-
-  async function saveNotesOnly() {
-    setSaving(true);
-    await onSaveNotes?.(notes);
-    setSaving(false);
-    setEditing(false);
-  }
 
   async function saveFull() {
     setSaving(true);
@@ -89,6 +75,14 @@ export default function PinDetailModal({
     setEditing(false);
   }
 
+  async function handleDelete() {
+    setDeleting(true);
+    await onDelete?.(pin.id);
+    setDeleting(false);
+    setConfirmDelete(false);
+    onClose();
+  }
+
   function startEdit() {
     setPhotoUrl(pin.photo_url);
     setTitle(pin.title ?? "");
@@ -105,15 +99,10 @@ export default function PinDetailModal({
     setNotes(pin.notes);
   }
 
-  async function handleDelete() {
-    setDeleting(true);
-    await onDelete?.(pin.id);
-    setDeleting(false);
-    setConfirmDelete(false);
-    onClose();
-  }
-
-  const tagList = (pin.tags ?? "").split(",").map((t) => t.trim()).filter(Boolean);
+  const tagList = (pin.tags ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const inputClass =
+    "mt-1 w-full rounded-xl border border-border bg-surface px-4 py-2.5 outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20";
+  const labelClass = "block text-sm font-medium text-ink";
 
   return (
     <div
@@ -124,16 +113,16 @@ export default function PinDetailModal({
     >
       <div
         ref={dialogRef}
-        className="w-full max-w-lg overflow-hidden rounded-t-3xl bg-white shadow-2xl dark:bg-stone-900 sm:rounded-3xl"
+        className="w-full max-w-lg overflow-hidden rounded-t-2xl bg-surface shadow-2xl sm:rounded-2xl"
       >
         {editing && fullEdit ? (
-          <div className="relative max-h-[50vh] w-full bg-stone-200 dark:bg-stone-800" />
+          <div className="h-8 bg-surface-2" />
         ) : (
-          <div className="relative max-h-[50vh] w-full bg-stone-100 dark:bg-stone-800">
+          <div className="relative max-h-[50vh] w-full bg-surface-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={pin.photo_url}
-              alt="pin"
+              alt={pin.title ?? "pin"}
               className="max-h-[50vh] w-full object-cover"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
@@ -141,8 +130,8 @@ export default function PinDetailModal({
             />
             <button
               onClick={onClose}
-              aria-label="Close"
-              className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-stone-700 shadow hover:bg-white dark:bg-stone-800/90 dark:text-stone-200 dark:hover:bg-stone-800"
+              aria-label={t("Modal.close")}
+              className="absolute right-3 top-3 rounded-full bg-surface/90 px-3 py-1 text-sm font-medium text-ink shadow hover:bg-surface"
             >
               ✕
             </button>
@@ -152,9 +141,9 @@ export default function PinDetailModal({
         <div className="space-y-4 p-5">
           <div className="flex items-center gap-3">
             <Link href={`/users/${pin.owner_id}`} className="shrink-0">
-              <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200 dark:bg-stone-800">
+              <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-surface-2 ring-2 ring-sun/40">
                 {pin.owner_avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={pin.owner_avatar_url}
                     alt={pin.owner_display_name}
@@ -168,34 +157,33 @@ export default function PinDetailModal({
             <div className="min-w-0 flex-1">
               <Link
                 href={`/users/${pin.owner_id}`}
-                className="block truncate font-semibold text-stone-800 hover:underline dark:text-stone-100"
+                className="font-display block truncate font-semibold text-ink hover:underline"
               >
-                {pin.owner_display_name || "Pinner"}
+                {pin.owner_display_name || t("Fallback.pinner")}
               </Link>
-              <p className="truncate text-sm text-stone-500 dark:text-stone-400">
+              <p className="truncate text-sm text-ink-muted">
                 {relocating
-                  ? "Click the map to set a new location…"
-                  : [pin.city, pin.country].filter(Boolean).join(", ") || "Pinned location"}
+                  ? t("Modal.relocatingHint")
+                  : [pin.city, pin.country].filter(Boolean).join(", ") || t("Fallback.pinnedLocation")}
               </p>
             </div>
           </div>
 
           {editing && fullEdit ? (
             <div className="space-y-4">
-              {/* Photo URL */}
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-                Photo link
+              <label className={labelClass}>
+                {t("Add.photoLink")}
                 <input
                   type="url"
                   required
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
-                  placeholder="https://…/photo.jpg"
-                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+                  placeholder={t("Add.photoPlaceholder")}
+                  className={inputClass}
                 />
               </label>
               {photoUrl && (
-                <div className="overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-700">
+                <div className="overflow-hidden rounded-xl border border-border">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={photoUrl}
@@ -208,67 +196,60 @@ export default function PinDetailModal({
                 </div>
               )}
 
-              {/* Title */}
-              <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-                Title <span className="text-stone-400 dark:text-stone-500">(optional)</span>
+              <label className={labelClass}>
+                {t("Add.title")} <span className="text-ink-muted">{t("Common.optional")}</span>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Sunset at Wat Arun"
-                  className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                  placeholder={t("Add.titlePlaceholder")}
+                  className={inputClass}
                 />
               </label>
 
-              {/* Date visited + Tags */}
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-                  Date visited <span className="text-stone-400 dark:text-stone-500">(optional)</span>
+                <label className={labelClass}>
+                  {t("Add.dateVisited")} <span className="text-ink-muted">{t("Common.optional")}</span>
                   <input
                     type="date"
                     value={visitedAt}
                     onChange={(e) => setVisitedAt(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                    className={inputClass}
                   />
                 </label>
-                <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-                  Tags <span className="text-stone-400 dark:text-stone-500">(comma-separated)</span>
+                <label className={labelClass}>
+                  {t("Add.tags")} <span className="text-ink-muted">{t("Add.commaSeparated")}</span>
                   <input
                     type="text"
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
-                    placeholder="food, temple, hike"
-                    className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                    placeholder={t("Add.tagsPlaceholder")}
+                    className={inputClass}
                   />
                 </label>
               </div>
 
-              {/* Location */}
-              <div className="rounded-2xl bg-amber-50 p-3 text-sm dark:bg-amber-950/40">
+              <div className="rounded-xl bg-sun/10 p-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-amber-700 dark:text-amber-300">Location</p>
+                  <p className="font-semibold text-sun">{t("Modal.location")}</p>
                   <button
                     type="button"
                     onClick={() => onRelocate?.()}
                     className={`text-sm font-medium underline ${
-                      relocating
-                        ? "text-rose-600 dark:text-rose-400"
-                        : "text-amber-600 dark:text-amber-400"
+                      relocating ? "text-danger" : "text-magenta"
                     }`}
                   >
-                    {relocating ? "Cancel relocate" : "Relocate on map"}
+                    {relocating ? t("Modal.cancelRelocate") : t("Modal.relocate")}
                   </button>
                 </div>
                 {relocating ? (
-                  <p className="mt-1 text-amber-800 dark:text-amber-200">
-                    Click the map to drop this pin somewhere else…
-                  </p>
+                  <p className="mt-1 text-ink">{t("Modal.relocateHint")}</p>
                 ) : (
                   <div className="mt-1 space-y-2">
-                    <p className="text-amber-800 dark:text-amber-200">
-                      {city || country ? [city, country].filter(Boolean).join(", ") : "Unknown spot"}
+                    <p className="text-ink">
+                      {city || country ? [city, country].filter(Boolean).join(", ") : t("Add.unknownSpot")}
                     </p>
-                    <p className="font-mono text-xs text-amber-700/80 dark:text-amber-300/80">
+                    <p className="font-mono text-xs text-ink-muted">
                       {pin.lat.toFixed(4)}, {pin.lng.toFixed(4)}
                     </p>
                     <div className="flex gap-2">
@@ -276,15 +257,15 @@ export default function PinDetailModal({
                         type="text"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        placeholder="City"
-                        className="flex-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs dark:border-amber-800 dark:bg-stone-800 dark:text-stone-100"
+                        placeholder={t("Modal.city")}
+                        className="flex-1 rounded-lg border border-sun/30 bg-surface px-2 py-1 text-xs"
                       />
                       <input
                         type="text"
                         value={country}
                         onChange={(e) => setCountry(e.target.value)}
-                        placeholder="Country"
-                        className="flex-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs dark:border-amber-800 dark:bg-stone-800 dark:text-stone-100"
+                        placeholder={t("Modal.country")}
+                        className="flex-1 rounded-lg border border-sun/30 bg-surface px-2 py-1 text-xs"
                       />
                     </div>
                   </div>
@@ -293,18 +274,17 @@ export default function PinDetailModal({
             </div>
           ) : null}
 
-          {/* Memo block — read view OR memo-only-edit OR part of full-edit */}
           <div>
             <div className="mb-1 flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">
-                Memo
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                {t("Modal.memo")}
               </h3>
               {canEdit && !editing && (
                 <button
                   onClick={startEdit}
-                  className="text-sm font-medium text-amber-600 hover:underline dark:text-amber-400"
+                  className="text-sm font-medium text-magenta hover:underline"
                 >
-                  Edit
+                  {t("Modal.edit")}
                 </button>
               )}
             </div>
@@ -315,55 +295,55 @@ export default function PinDetailModal({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
-                  placeholder="Write a memory about this spot…"
-                  className="w-full rounded-xl border border-stone-300 px-3 py-2 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+                  placeholder={t("Add.writeMemoPlaceholder")}
+                  className={inputClass}
                 />
                 <div className="flex gap-2">
                   <button
-                    onClick={fullEdit ? saveFull : saveNotesOnly}
+                    onClick={saveFull}
                     disabled={saving}
-                    className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-60"
+                    className="rounded-xl bg-magenta px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
                   >
-                    {saving ? "Saving…" : "Save"}
+                    {saving ? t("Modal.saving") : t("Modal.save")}
                   </button>
                   <button
                     onClick={cancelEdit}
                     disabled={saving}
-                    className="rounded-xl px-4 py-2 text-sm text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
+                    className="rounded-xl px-4 py-2 text-sm text-ink-muted hover:bg-surface-2"
                   >
-                    Cancel
+                    {t("Modal.cancel")}
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="whitespace-pre-wrap rounded-xl bg-stone-50 p-3 text-stone-700 dark:bg-stone-800 dark:text-stone-200">
-                {notes || <span className="italic text-stone-400">No memo yet.</span>}
+              <p className="whitespace-pre-wrap rounded-xl bg-surface-2 p-3 text-ink">
+                {notes || <span className="italic text-ink-muted">{t("Modal.noMemo")}</span>}
               </p>
             )}
           </div>
 
           {!editing && (pin.title || pin.visited_at || tagList.length > 0) && (
-            <div className="space-y-2 border-t border-stone-100 pt-3 dark:border-stone-800">
+            <div className="space-y-2 border-t border-border pt-3">
               {pin.title && (
                 <p className="text-sm">
-                  <span className="font-medium text-stone-500 dark:text-stone-400">Title:</span>{" "}
-                  <span className="text-stone-800 dark:text-stone-100">{pin.title}</span>
+                  <span className="font-medium text-ink-muted">{t("Modal.titleLabel")}</span>{" "}
+                  <span className="text-ink">{pin.title}</span>
                 </p>
               )}
               {pin.visited_at && (
                 <p className="text-sm">
-                  <span className="font-medium text-stone-500 dark:text-stone-400">Visited:</span>{" "}
-                  <span className="text-stone-800 dark:text-stone-100">{pin.visited_at}</span>
+                  <span className="font-medium text-ink-muted">{t("Modal.visitedLabel")}</span>{" "}
+                  <span className="text-ink">{pin.visited_at}</span>
                 </p>
               )}
               {tagList.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5">
-                  {tagList.map((t) => (
+                  {tagList.map((tag) => (
                     <span
-                      key={t}
-                      className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                      key={tag}
+                      className="rounded-full bg-verde/15 px-2.5 py-0.5 text-xs font-medium text-verde"
                     >
-                      {t}
+                      {tag}
                     </span>
                   ))}
                 </div>
@@ -372,35 +352,35 @@ export default function PinDetailModal({
           )}
 
           {canEdit && onDelete && !editing && (
-            <div className="border-t border-stone-100 pt-3 dark:border-stone-800">
+            <div className="border-t border-border pt-3">
               {confirmDelete ? (
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-rose-700 dark:text-rose-300">
-                    Delete this pin? This can&apos;t be undone.
+                  <span className="text-sm font-medium text-danger">
+                    {t("Modal.deleteConfirm")}
                   </span>
                   <div className="flex gap-2">
                     <button
                       onClick={handleDelete}
                       disabled={deleting}
-                      className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-60"
+                      className="rounded-xl bg-danger px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
                     >
-                      {deleting ? "Deleting…" : "Delete"}
+                      {deleting ? t("Modal.deleting") : t("Modal.delete")}
                     </button>
                     <button
                       onClick={() => setConfirmDelete(false)}
                       disabled={deleting}
-                      className="rounded-xl px-3 py-1.5 text-sm text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
+                      className="rounded-xl px-3 py-1.5 text-sm text-ink-muted hover:bg-surface-2"
                     >
-                      Keep
+                      {t("Modal.keep")}
                     </button>
                   </div>
                 </div>
               ) : (
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="text-sm font-medium text-rose-600 hover:underline dark:text-rose-400"
+                  className="text-sm font-medium text-danger hover:underline"
                 >
-                  Delete pin
+                  {t("Modal.deletePin")}
                 </button>
               )}
             </div>

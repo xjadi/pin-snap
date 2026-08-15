@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { ANONYMOUS } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
+  const t = await getTranslations("People");
   const supabase = await createClient();
 
   const { data: profiles } = await supabase
@@ -25,28 +28,26 @@ export default async function UsersPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <div className="mb-6 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">The pinner crew</h1>
-        <p className="mt-1 text-stone-500">
-          Everyone sharing memories on the map. Tap a profile to see their pins.
-        </p>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-ink-muted">{t("subtitle")}</p>
       </div>
 
-      {(!profiles || profiles.length === 0) && (
-        <p className="text-center text-stone-500">No pinners yet. Be the first!</p>
+      {(!profiles || profiles.filter((p) => p.display_name && p.display_name !== ANONYMOUS).length === 0) && (
+        <p className="text-center text-ink-muted">{t("empty")}</p>
       )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {(profiles ?? [])
-          .filter((p) => p.display_name && p.display_name !== "Anonymous")
+          .filter((p) => p.display_name && p.display_name !== ANONYMOUS)
           .map((p) => (
             <Link
               key={p.id}
               href={`/users/${p.id}`}
-              className="group flex flex-col items-center rounded-3xl border border-stone-200 bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+              className="group flex flex-col items-center rounded-2xl border border-border bg-surface p-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md"
             >
-              <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200 transition group-hover:ring-amber-400">
+              <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-surface-2 ring-2 ring-sun/40 transition group-hover:ring-sun">
                 {p.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={p.avatar_url}
                     alt={p.display_name}
@@ -56,14 +57,14 @@ export default async function UsersPage() {
                   <span className="text-3xl">🙂</span>
                 )}
               </span>
-              <p className="mt-3 truncate font-semibold text-stone-800">
+              <p className="font-display mt-3 truncate font-semibold">
                 {p.display_name}
               </p>
-              <p className="text-xs font-medium text-amber-600">
-                {tally.get(p.id) ?? 0} pinned memor{tally.get(p.id) === 1 ? "y" : "ies"}
+              <p className="text-xs font-medium text-magenta">
+                {t("count", { count: tally.get(p.id) ?? 0 })}
               </p>
               {p.bio && (
-                <p className="mt-1 line-clamp-2 text-xs text-stone-400">{p.bio}</p>
+                <p className="mt-1 line-clamp-2 text-xs text-ink-muted">{p.bio}</p>
               )}
             </Link>
           ))}

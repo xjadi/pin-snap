@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types";
 
@@ -16,6 +17,10 @@ const PRESET_AVATARS = [
   "https://api.dicebear.com/9.x/thumbs/svg?seed=Mango&backgroundColor=ffd6d6",
 ];
 
+const inputClass =
+  "mt-1 w-full rounded-xl border border-border bg-surface px-4 py-2.5 outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20";
+const labelClass = "block text-sm font-medium text-ink";
+
 export default function ProfileEditor({
   initial,
   email,
@@ -23,6 +28,9 @@ export default function ProfileEditor({
   initial: Profile | undefined;
   email: string;
 }) {
+  const t = useTranslations("Profile");
+  const tCommon = useTranslations("Onboarding");
+  const tFallback = useTranslations("Fallback");
   const router = useRouter();
   const supabase = createClient();
 
@@ -43,7 +51,7 @@ export default function ProfileEditor({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setError("Not logged in.");
+      setError(tCommon("notLoggedIn"));
       setSaving(false);
       return;
     }
@@ -53,7 +61,7 @@ export default function ProfileEditor({
       .upsert(
         {
           id: user.id,
-          display_name: displayName.trim() || email.split("@")[0] || "Pinner",
+          display_name: displayName.trim() || email.split("@")[0] || tFallback("pinner"),
           avatar_url: avatarUrl.trim(),
           bio: bio.trim(),
         },
@@ -70,11 +78,11 @@ export default function ProfileEditor({
   }
 
   return (
-    <section className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
+    <section className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
-        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200 dark:bg-stone-800">
+        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-surface-2 ring-2 ring-sun/40">
           {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={avatarUrl}
               alt="avatar"
@@ -93,7 +101,7 @@ export default function ProfileEditor({
                 type="button"
                 onClick={() => setAvatarUrl(url)}
                 className={`overflow-hidden rounded-full ring-2 transition ${
-                  avatarUrl === url ? "ring-amber-500" : "ring-stone-200 hover:ring-amber-300 dark:ring-stone-700 dark:hover:ring-amber-400"
+                  avatarUrl === url ? "ring-magenta" : "ring-border hover:ring-magenta/40"
                 }`}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -102,49 +110,49 @@ export default function ProfileEditor({
             ))}
           </div>
 
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-            Avatar link <span className="text-stone-400 dark:text-stone-500">(or pick a preset)</span>
+          <label className={labelClass}>
+            {t("avatarLink")} <span className="text-ink-muted">{t("avatarOrPreset")}</span>
             <input
               type="url"
               value={avatarUrl.startsWith("https://api.dicebear.com") ? "" : avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://…/avatar.png"
-              className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+              placeholder={tCommon("avatarPlaceholder")}
+              className={inputClass}
             />
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-              Display name
+            <label className={labelClass}>
+              {tCommon("displayName")}
               <input
                 type="text"
                 required
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="e.g. Bangkok Explorer"
-                className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                placeholder={t("displayNamePlaceholder")}
+                className={inputClass}
               />
             </label>
 
-            <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-              Email
+            <label className={labelClass}>
+              {t("email")}
               <input
                 type="text"
                 value={email}
                 disabled
-                className="mt-1 w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-stone-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-500"
+                className={`${inputClass} border-border/50 bg-surface-2 text-ink-muted`}
               />
             </label>
           </div>
 
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-            Bio
+          <label className={labelClass}>
+            {tCommon("bio")} <span className="text-ink-muted">{tCommon("optional")}</span>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={2}
-              placeholder="A little about you…"
-              className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+              placeholder={t("bioPlaceholder")}
+              className={inputClass}
             />
           </label>
 
@@ -152,15 +160,15 @@ export default function ProfileEditor({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-amber-500 px-5 py-2.5 font-medium text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-60"
+              className="rounded-xl bg-magenta px-5 py-2.5 font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
             >
-              {saving ? "Saving…" : "Save profile"}
+              {saving ? t("saving") : t("save")}
             </button>
             {saved && !error && (
-              <span className="text-sm text-emerald-600">Saved!</span>
+              <span className="text-sm text-verde">{t("saved")}</span>
             )}
             {error && (
-              <span className="text-sm text-rose-600">{error}</span>
+              <span className="text-sm text-danger">{error}</span>
             )}
           </div>
         </form>

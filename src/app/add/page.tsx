@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import AddPinMap from "@/app/add/AddPinMap";
 
 export default async function AddPinPage() {
+  const t = await getTranslations("Add");
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,6 +18,7 @@ export default async function AddPinPage() {
     .eq("id", user.id)
     .single();
 
+  const tFallback = await getTranslations("Fallback");
   const pins = await supabase
     .from("pins")
     .select(
@@ -37,7 +40,7 @@ export default async function AddPinPage() {
       notes: r.notes,
       created_at: r.created_at,
       owner_id: r.user_id,
-      owner_display_name: prof?.display_name ?? profile?.display_name ?? "Pinner",
+      owner_display_name: prof?.display_name ?? profile?.display_name ?? tFallback("pinner"),
       owner_avatar_url: prof?.avatar_url ?? profile?.avatar_url ?? "",
       title: r.title,
       visited_at: r.visited_at,
@@ -46,12 +49,10 @@ export default async function AddPinPage() {
   });
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold tracking-tight">Add a pin</h1>
-        <p className="text-sm text-stone-500">
-          Click anywhere on the map, paste a photo link, add a memo, and save.
-        </p>
+    <main className="mx-auto max-w-6xl px-4 py-8">
+      <div className="mb-6">
+        <h1 className="font-display text-2xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="text-sm text-ink-muted">{t("subtitle")}</p>
       </div>
       <AddPinMap existingPins={existingPins} />
     </main>

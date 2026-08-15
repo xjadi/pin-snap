@@ -33,14 +33,55 @@ export interface PinSummary {
   byCountry: CountryGroup[];
 }
 
+export interface PinFilter {
+  type: "country" | "city";
+  value: string;
+}
+
 const KEY = (s: string) => (s ?? "").trim();
+
+export function filterPins(pins: MapPin[], f: PinFilter | null): MapPin[] {
+  if (!f) return pins;
+  if (f.type === "country") return pins.filter((p) => KEY(p.country) === f.value);
+  return pins.filter((p) => KEY(p.city) === f.value);
+}
+
+/** Compute a bounding box [min, max] (lng/lat) for a set of pins. Null if empty. */
+export function pinsBounds(
+  pins: MapPin[],
+): [[number, number], [number, number]] | null {
+  if (pins.length === 0) return null;
+  let minLng = pins[0].lng;
+  let maxLng = pins[0].lng;
+  let minLat = pins[0].lat;
+  let maxLat = pins[0].lat;
+  for (const p of pins) {
+    if (p.lng < minLng) minLng = p.lng;
+    if (p.lng > maxLng) maxLng = p.lng;
+    if (p.lat < minLat) minLat = p.lat;
+    if (p.lat > maxLat) maxLat = p.lat;
+  }
+  // Guard against degenerate single-point bounds (avoid zero-area viewport).
+  if (minLng === maxLng) {
+    minLng -= 0.01;
+    maxLng += 0.01;
+  }
+  if (minLat === maxLat) {
+    minLat -= 0.01;
+    maxLat += 0.01;
+  }
+  return [
+    [minLng, minLat],
+    [maxLng, maxLat],
+  ];
+}
 const PLACEHOLDER = new Set(["", "unknown", "unnamed"]);
 
 function visible(s: string): boolean {
   return !PLACEHOLDER.has(KEY(s).toLowerCase());
 }
 
-export function summarizePins(pins: MapPin[]): PinSummary {
+export function summarizePins(pins: MapPin[], locale: string = "en"): PinSummary {
   const totalPins = pins.length;
   const countryMap = new Map<string, Map<string, number>>();
 
@@ -58,14 +99,14 @@ export function summarizePins(pins: MapPin[]): PinSummary {
     .map(([name, cityMap]) => {
       const cities: CityCount[] = Array.from(cityMap.entries())
         .map(([cname, count]) => ({ name: cname, count }))
-        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, locale));
       return {
         name,
         count: cities.reduce((n, c) => n + c.count, 0),
         cities,
       };
     })
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, locale));
 
   const totalCountries = byCountry.length;
   const totalCities = new Set(

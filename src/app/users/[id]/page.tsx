@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import type { MapPin } from "@/lib/pin";
 import UserMap from "@/app/users/UserMap";
 
@@ -12,6 +13,7 @@ export default async function UserProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations();
   const supabase = await createClient();
 
   const { data: profile } = await supabase
@@ -54,10 +56,10 @@ export default async function UserProfilePage({
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-6 flex flex-col items-center gap-4 rounded-3xl border border-stone-200 bg-white p-6 text-center shadow-sm sm:flex-row sm:text-left">
-        <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200">
+      <div className="mb-6 flex flex-col items-center gap-4 rounded-2xl border border-border bg-surface p-6 text-center shadow-sm sm:flex-row sm:text-left">
+        <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-surface-2 ring-2 ring-sun/40">
           {profile.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={profile.avatar_url}
               alt={profile.display_name}
@@ -68,28 +70,28 @@ export default async function UserProfilePage({
           )}
         </span>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="font-display text-2xl font-bold tracking-tight">
             {profile.display_name}
           </h1>
-          <p className="text-sm text-amber-600">
-            {pins.length} pinned memor{pins.length === 1 ? "y" : "ies"}
+          <p className="text-sm text-magenta">
+            {t("People.count", { count: pins.length })}
           </p>
           {profile.bio && (
-            <p className="mt-2 max-w-xl text-sm text-stone-600">{profile.bio}</p>
+            <p className="mt-2 max-w-xl text-sm text-ink-muted">{profile.bio}</p>
           )}
         </div>
         <Link
           href="/users"
-          className="rounded-full border border-stone-200 px-4 py-2 text-sm text-stone-600 hover:bg-stone-100"
+          className="rounded-full border border-border px-4 py-2 text-sm text-ink-muted hover:bg-surface-2"
         >
-          ← All people
+          {t("People.allPeople")}
         </Link>
       </div>
 
       {pins.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-12 text-center text-stone-500">
+        <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center text-ink-muted">
           <div className="text-4xl">🗂️</div>
-          <p className="mt-3">No pins yet from {profile.display_name}.</p>
+          <p className="mt-3">{t("People.noPins", { name: profile.display_name })}</p>
         </div>
       ) : (
         <UserMap pins={pins} />

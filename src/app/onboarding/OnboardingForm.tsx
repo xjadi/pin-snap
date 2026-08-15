@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/types";
 
@@ -14,6 +15,10 @@ const PRESET_AVATARS = [
   "https://api.dicebear.com/9.x/thumbs/svg?seed=Mango&backgroundColor=ffd6d6",
 ];
 
+const inputClass =
+  "mt-1 w-full rounded-xl border border-border bg-surface px-4 py-2.5 outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20";
+const labelClass = "block text-sm font-medium text-ink";
+
 export default function OnboardingForm({
   initial,
   email,
@@ -23,6 +28,7 @@ export default function OnboardingForm({
     | undefined;
   email: string;
 }) {
+  const t = useTranslations("Onboarding");
   const router = useRouter();
   const supabase = createClient();
 
@@ -41,7 +47,7 @@ export default function OnboardingForm({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setError("Not logged in.");
+      setError(t("notLoggedIn"));
       setSaving(false);
       return;
     }
@@ -70,12 +76,10 @@ export default function OnboardingForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <span className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-          Avatar preview
-        </span>
-        <div className="mt-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-stone-100 ring-2 ring-amber-200 dark:bg-stone-800">
+        <span className={labelClass}>{t("avatarPreview")}</span>
+        <div className="mt-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-surface-2 ring-2 ring-sun/40">
           {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={avatarUrl}
               alt="avatar preview"
@@ -91,9 +95,7 @@ export default function OnboardingForm({
       </div>
 
       <div>
-        <span className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-          Pick a preset
-        </span>
+        <span className={labelClass}>{t("pickPreset")}</span>
         <div className="mt-2 grid grid-cols-6 gap-2">
           {PRESET_AVATARS.map((url) => (
             <button
@@ -101,7 +103,7 @@ export default function OnboardingForm({
               type="button"
               onClick={() => setAvatarUrl(url)}
               className={`overflow-hidden rounded-full ring-2 transition ${
-                avatarUrl === url ? "ring-amber-500" : "ring-stone-200 hover:ring-amber-300 dark:ring-stone-700 dark:hover:ring-amber-400"
+                avatarUrl === url ? "ring-magenta" : "ring-border hover:ring-magenta/40"
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -111,50 +113,50 @@ export default function OnboardingForm({
         </div>
       </div>
 
-      <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-        …or paste an avatar image link
+      <label className={labelClass}>
+        {t("pasteAvatarLink")}
         <input
           type="url"
           value={avatarUrl.startsWith("https://api.dicebear.com") ? "" : avatarUrl}
           onChange={(e) => setAvatarUrl(e.target.value)}
-          placeholder="https://…/your-avatar.png"
-          className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+          placeholder={t("avatarPlaceholder")}
+          className={inputClass}
         />
       </label>
 
-      <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-        Display name
+      <label className={labelClass}>
+        {t("displayName")}
         <input
           type="text"
           required
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="e.g. Somtum Lover"
-          className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+          placeholder={t("displayNamePlaceholder")}
+          className={inputClass}
         />
       </label>
 
-      <label className="block text-sm font-medium text-stone-700 dark:text-stone-200">
-        Bio <span className="text-stone-400 dark:text-stone-500">(optional)</span>
+      <label className={labelClass}>
+        {t("bio")} <span className="text-ink-muted">{t("optional")}</span>
         <textarea
           value={bio}
           onChange={(e) => setBio(e.target.value)}
-          placeholder="A little about you and the places you love…"
           rows={3}
-          className="mt-1 w-full rounded-xl border border-stone-300 px-4 py-2.5 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500"
+          placeholder={t("bioPlaceholder")}
+          className={inputClass}
         />
       </label>
 
       {error && (
-        <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{error}</p>
+        <p className="rounded-xl bg-danger/10 p-3 text-sm text-danger">{error}</p>
       )}
 
       <button
         type="submit"
         disabled={saving}
-        className="w-full rounded-xl bg-amber-500 px-4 py-2.5 font-medium text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-60"
+        className="w-full rounded-xl bg-magenta px-4 py-2.5 font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
       >
-        {saving ? "Saving…" : "Save & start pinning"}
+        {saving ? t("saving") : t("saveStart")}
       </button>
     </form>
   );

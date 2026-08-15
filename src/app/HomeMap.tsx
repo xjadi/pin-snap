@@ -1,18 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import MapView from "@/components/MapView";
 import PinDetailModal, { type PinEditPatch } from "@/components/PinDetailModal";
+import { PolaroidCard } from "@/components/PolaroidCard";
+import SummaryPanel from "@/components/SummaryPanel";
 import { useAuth } from "@/components/AuthProvider";
 import { usePinMutations } from "@/lib/usePinMutations";
-import type { MapPin } from "@/lib/pin";
+import {
+  filterPins,
+  pinsBounds,
+  type MapPin,
+  type PinFilter,
+  type PinSummary,
+} from "@/lib/pin";
 
-export default function HomeMap({ pins }: { pins: MapPin[] }) {
+export default function HomeMap({
+  pins,
+  summary,
+  title,
+  locale = "en",
+}: {
+  pins: MapPin[];
+  summary?: PinSummary;
+  title?: string;
+  locale?: string;
+}) {
+  const t = useTranslations();
   const { user, loading } = useAuth();
   const { updatePin, deletePin } = usePinMutations();
 
   const [localPins, setLocalPins] = useState<MapPin[]>(pins);
   const [active, setActive] = useState<MapPin | null>(null);
+  const [activeFilter, setActiveFilter] = useState<PinFilter | null>(null);
+  const fitNonceRef = useRef(0);
+  const [fitBoundsState, setFitBoundsState] = useState<{
+    bounds: [[number, number], [number, number]];
+    nonce: number;
+  } | null>(null);
+
+  const filteredPins = useMemo(
+    () => filterPins(localPins, activeFilter),
+    [localPins, activeFilter],
+  );
 
   const canEditActive =
     !loading && Boolean(user && active && active.owner_id === user.id);
@@ -26,48 +57,84 @@ export default function HomeMap({ pins }: { pins: MapPin[] }) {
     await deletePin(id, { setPins: setLocalPins, setActive });
   }
 
+  function applyFilter(f: PinFilter | null) {
+    setActiveFilter(f);
+    if (f) {
+      const next = filterPins(localPins, f);
+      const bounds = pinsBounds(next);
+      if (bounds) {
+        fitNonceRef.current += 1;
+        setFitBoundsState({ bounds, nonce: fitNonceRef.current });
+      }
+    } else {
+      setFitBoundsState(null);
+    }
+  }
+
   return (
     <>
-      <div className="overflow-hidden rounded-3xl border border-stone-200 shadow-sm dark:border-stone-800">
+      {summary && title && (
+        <div className="mb-6">
+          <SummaryPanel
+            pins={localPins}
+            summary={summary}
+            title={title}
+            locale={locale}
+            activeFilter={activeFilter}
+            onFilter={applyFilter}
+          />
+        </div>
+      )}
+
+      {/* Clear-filter chip */}
+      {activeFilter && (
+        <div className="mb-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => applyFilter(null)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-magenta/10 px-3 py-1 text-sm font-medium text-magenta transition hover:bg-magenta/20"
+          >
+            {activeFilter.value} ✕
+          </button>
+        </div>
+      )}
+
+      {/* Map in a polaroid frame */}
+      <div className="polaroid">
         <MapView
-          pins={localPins}
+          pins={filteredPins}
           initialZoom={5}
           onPinClick={(pin) => setActive(pin)}
+          fitBounds={fitBoundsState ?? undefined}
+          className="h-[50vh] w-full"
         />
       </div>
 
       {localPins.length > 0 && (
-        <p className="mt-3 text-center text-sm text-stone-500 dark:text-stone-400">
-          {localPins.length} pinned memor{localPins.length === 1 ? "y" : "ies"} on the map
+        <p className="mt-3 text-center text-sm text-ink-muted">
+          {activeFilter
+            ? t("Map.filteredOnMap", {
+                shown: filteredPins.length,
+                total: localPins.length,
+              })
+            : t("Map.memoriesOnMap", { count: localPins.length })}
         </p>
       )}
 
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {localPins.slice(0, 8).map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setActive(p)}
-            className="group overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
-          >
-            <div className="aspect-square w-full bg-stone-100 dark:bg-stone-800">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={p.photo_url}
-                alt="pin"
-                className="h-full w-full object-cover transition group-hover:scale-105"
-              />
-            </div>
-            <div className="p-2">
-              <p className="truncate text-xs font-medium text-stone-700 dark:text-stone-200">
-                {p.owner_display_name}
-              </p>
-              <p className="truncate text-[11px] text-stone-400 dark:text-stone-500">
-                {[p.city, p.country].filter(Boolean).join(", ") || "Pinned"}
-              </p>
-            </div>
-          </button>
-        ))}
-      </div>
+      {/* Masonry polaroid grid */}
+      {filteredPins.length > 0 && (
+        <div className="mt-8 columns-2 gap-4 sm:columns-3">
+          {filteredPins.slice(0, 9).map((p, i) => (
+            <PolaroidCard
+              key={p.id}
+              pin={p}
+              index={i}
+              showOwner
+              onClick={() => setActive(p)}
+            />
+          ))}
+        </div>
+      )}
 
       {active && (
         <PinDetailModal

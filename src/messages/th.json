@@ -1,0 +1,158 @@
+{
+  "Brand": {
+    "name": "PinSnap",
+    "tagline": "ปักหมุดความทรงจำรูปภาพของคุณบนแผนที่"
+  },
+  "Nav": {
+    "people": "คน",
+    "addPin": "เพิ่มหมุด",
+    "profile": "โปรไฟล์",
+    "logIn": "เข้าสู่ระบบ",
+    "signOut": "ออกจากระบบ"
+  },
+  "Theme": {
+    "toggleLight": "เปลี่ยนเป็นโหมดสว่าง",
+    "toggleDark": "เปลี่ยนเป็นโหมดมืด"
+  },
+  "Lang": {
+    "toggle": "ภาษา",
+    "en": "EN",
+    "th": "TH"
+  },
+  "Landing": {
+    "eyebrow": "โปสการ์ด · ไทย · ทั่วโลก",
+    "heroLine1": "วางรูป / Pin somewhere",
+    "heroLine2": "ที่คุณเคยไปจริง",
+    "subtitle": "ความทรงจำของทุกคน บนแผนที่เดียวกัน เอาเมาส์ไปวางบนหมุดเพื่อดูรูป — คลิกเพื่ออ่านเรื่องราว",
+    "statsLabel": "ความทรงจำ"
+  },
+  "Auth": {
+    "title": "เข้าสู่ PinSnap",
+    "subtitle": "ไม่ต้องใช้รหัสผ่าน — รับลิงก์เข้าระบบครั้งเดียวทางอีเมล หรือเข้าสู่ระบบด้วย Google",
+    "email": "อีเมล",
+    "emailPlaceholder": "you@example.com",
+    "sendMagicLink": "ส่งลิงก์เข้าระบบ",
+    "sending": "กำลังส่ง…",
+    "orDivider": "หรือ",
+    "google": "เข้าสู่ระบบด้วย Google",
+    "checkInbox": "ตรวจสอบกล่องจดหมาย — เราส่งลิงก์เข้าระบบไปยัง {email} แล้ว คลิกเพื่อดำเนินการต่อ",
+    "signInFirst": "กรุณาเข้าสู่ระบบก่อนเพิ่มหมุด"
+  },
+  "Onboarding": {
+    "title": "ตั้งค่าโปรไฟล์ของคุณ",
+    "subtitle": "เลือกชื่อที่แสดงและอวตารเพื่อให้คนอื่นรู้จักหมุดของคุณ",
+    "avatarPreview": "ตัวอย่างอวตาร",
+    "pickPreset": "เลือกจากชุดสำเร็จ",
+    "pasteAvatarLink": "…หรือวางลิงก์รูปอวตาร",
+    "avatarPlaceholder": "https://…/your-avatar.png",
+    "displayName": "ชื่อที่แสดง",
+    "displayNamePlaceholder": "เช่น รักส้มตำ",
+    "bio": "แนะนำตัว",
+    "bioPlaceholder": "เล็กน้อยเกี่ยวกับคุณและสถานที่ที่คุณชอบ…",
+    "optional": "(ไม่บังคับ)",
+    "saveStart": "บันทึก & เริ่มปักหมุด",
+    "saving": "กำลังบันทึก…",
+    "notLoggedIn": "ยังไม่ได้เข้าสู่ระบบ"
+  },
+  "Profile": {
+    "title": "หมุดของคุณ",
+    "emptyState": "คุณยังไม่ได้ปักหมุดอะไรเลย",
+    "banner": "อย่าลืมเลือกชื่อที่แสดงและอวตารด้านล่างเพื่อให้คนรู้จักหมุดของคุณ",
+    "avatarLink": "ลิงก์อวตาร",
+    "avatarOrPreset": "(หรือเลือกจากชุดสำเร็จ)",
+    "displayNamePlaceholder": "เช่น นักสำรวจกรุงเทพ",
+    "email": "อีเมล",
+    "bioPlaceholder": "เล็กน้อยเกี่ยวกับคุณ…",
+    "save": "บันทึกโปรไฟล์",
+    "saving": "กำลังบันทึก…",
+    "saved": "บันทึกแล้ว!",
+    "editProfile": "แก้ไขโปรไฟล์"
+  },
+  "People": {
+    "title": "กลุ่มคนปักหมุด",
+    "subtitle": "ทุกคนที่แชร์ความทรงจำบนแผนที่ แตะโปรไฟล์เพื่อดูหมุดของพวกเขา",
+    "empty": "ยังไม่มีใครปักหมุดเลย มาเป็นคนแรก!",
+    "allPeople": "← คนทั้งหมด",
+    "count": "{count, plural, other {# ความทรงจำที่ปักไว้}}",
+    "noPins": "ยังไม่มีหมุดจาก {name}"
+  },
+  "Add": {
+    "title": "เพิ่มหมุด",
+    "subtitle": "คลิกที่ใดก็ได้บนแผนที่ วางลิงก์รูป เพิ่มบันทึก แล้วบันทึก",
+    "searchPlaceholder": "ค้นหาสถานที่ — เมือง สถานที่สำคัญ ที่อยู่…",
+    "emptyDraft": "ค้นหาสถานที่ด้านบน หรือคลิกที่ใดก็ได้บนแผนที่เพื่อปักหมุด เราจะเดาเมืองและประเทศให้คุณ",
+    "pinLocation": "ตำแหน่งหมุด",
+    "lookingUp": "กำลังค้นหาสถานที่…",
+    "unknownSpot": "ไม่ระบุสถานที่",
+    "photoLink": "ลิงก์รูปภาพ",
+    "photoPlaceholder": "https://…/photo.jpg",
+    "title": "หัวข้อ",
+    "optional": "(ไม่บังคับ)",
+    "dateVisited": "วันที่ไปเยือน",
+    "tags": "แท็ก",
+    "commaSeparated": "(คั่นด้วยจุลภาค)",
+    "tagsPlaceholder": "อาหาร, วัด, เดินป่า",
+    "titlePlaceholder": "เช่น พระอาทิตย์ตกที่วัดอรุณ",
+    "memo": "บันทึก",
+    "memoPlaceholder": "เกิดอะไรขึ้นที่ที่นี่?",
+    "writeMemoPlaceholder": "เขียนความทรงจำเกี่ยวกับที่นี่…",
+    "save": "บันทึกหมุด",
+    "saving": "กำลังบันทึก…",
+    "cancel": "ยกเลิก"
+  },
+  "Modal": {
+    "close": "ปิด",
+    "edit": "แก้ไข",
+    "save": "บันทึก",
+    "saving": "กำลังบันทึก…",
+    "cancel": "ยกเลิก",
+    "location": "ตำแหน่ง",
+    "relocate": "ย้ายตำแหน่งบนแผนที่",
+    "cancelRelocate": "ยกเลิกการย้าย",
+    "relocateHint": "คลิกแผนที่เพื่อวางหมุดนี้ที่อื่น…",
+    "relocatingHint": "คลิกแผนที่เพื่อตั้งตำแหน่งใหม่…",
+    "city": "เมือง",
+    "country": "ประเทศ",
+    "memo": "บันทึก",
+    "noMemo": "ยังไม่มีบันทึก",
+    "titleLabel": "หัวข้อ:",
+    "visitedLabel": "วันที่ไป:",
+    "deletePin": "ลบหมุด",
+    "deleteConfirm": "ลบหมุดนี้? ไม่สามารถกู้คืนได้",
+    "delete": "ลบ",
+    "deleting": "กำลังลบ…",
+    "keep": "เก็บไว้"
+  },
+  "Summary": {
+    "yourMap": "แผนที่การเดินทางของคุณ",
+    "communityMap": "แผนที่การเดินทางของชุมชน",
+    "line": "{pins, plural, other {# ความทรงจำที่ปักไว้}} · {countries, plural, other {# ประเทศ}} · {cities, plural, other {# เมือง}}",
+    "byCountry": "ตามประเทศ",
+    "byCity": "ตามเมือง",
+    "pinCount": "{count, plural, other {# หมุด}}",
+    "unnamedCity": "(เมืองไม่ระบุ)",
+    "clear": "ล้างตัวกรอง"
+  },
+  "Map": {
+    "onMap": "บนแผนที่",
+    "memoriesOnMap": "{count, plural, other {# ความทรงจำบนแผนที่}}",
+    "filteredOnMap": "กำลังแสดง {shown} จาก {total} ความทรงจำบนแผนที่"
+  },
+  "Errors": {
+    "couldNotSavePin": "ไม่สามารถบันทึกหมุดได้",
+    "couldNotUpdatePin": "ไม่สามารถแก้ไขหมุดได้",
+    "couldNotDeletePin": "ไม่สามารถลบหมุดได้"
+  },
+  "Fallback": {
+    "pinner": "ผู้ปักหมุด",
+    "pinned": "ปักหมุดแล้ว",
+    "pinnedLocation": "ตำแหน่งที่ปักหมุด"
+  },
+  "Setup": {
+    "title": "ใกล้ได้แล้ว!",
+    "body": "แผนที่นี้ต้องการโปรเจกต์ Supabase ในการทำงาน เพิ่ม NEXT_PUBLIC_SUPABASE_URL และ NEXT_PUBLIC_SUPABASE_ANON_KEY ใน .env.local แล้วรัน SQL ใน supabase/schema.sql"
+  },
+  "Common": {
+    "optional": "(ไม่บังคับ)"
+  }
+}

@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import OnboardingForm from "@/app/onboarding/OnboardingForm";
 
 export default async function OnboardingPage() {
+  const t = await getTranslations("Onboarding");
   const supabase = await createClient();
   const {
     data: { user },
@@ -18,13 +20,11 @@ export default async function OnboardingPage() {
 
   return (
     <main className="mx-auto max-w-xl px-4 py-12">
-      <div className="rounded-3xl border border-stone-200 bg-white p-8 shadow-sm dark:border-stone-800 dark:bg-stone-900">
+      <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm">
         <div className="mb-6 text-center">
           <div className="text-4xl">✨</div>
-          <h1 className="mt-2 text-2xl font-semibold">Set up your profile</h1>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-            Pick a display name and avatar so others can recognise your pins.
-          </p>
+          <h1 className="font-display mt-2 text-2xl font-bold">{t("title")}</h1>
+          <p className="mt-1 text-sm text-ink-muted">{t("subtitle")}</p>
         </div>
 
         <OnboardingForm initial={profile ?? undefined} email={user.email ?? ""} />
