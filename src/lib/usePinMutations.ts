@@ -3,11 +3,19 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { driveFileIdFromUrl } from "@/lib/uploadPinPhoto";
 import type { MapPin } from "@/lib/pin";
 import type { PinEditPatch } from "@/components/PinDetailModal";
 
 const SELECT =
   "id, photo_url, lat, lng, city, country, notes, created_at, user_id, title, visited_at, tags";
+
+/** Best-effort removal of a Drive-backed photo file. Never throws. */
+function cleanupDrivePhoto(url: string | null | undefined) {
+  const fileId = url ? driveFileIdFromUrl(url) : null;
+  if (!fileId) return;
+  fetch(`/api/photo/${fileId}`, { method: "DELETE" }).catch(() => {});
+}
 
 /**
  * Shared client-side pin mutation + local-state sync helpers.
@@ -27,6 +35,13 @@ export function usePinMutations() {
         setActive?: React.Dispatch<React.SetStateAction<MapPin | null>>;
       },
     ): Promise<{ ok: boolean }> => {
+      // Grab the existing photo URL so we can clean up a replaced Drive file.
+      const { data: existing } = await supabase
+        .from("pins")
+        .select("photo_url")
+        .eq("id", id)
+        .single();
+
       const { data, error } = await supabase
         .from("pins")
         .update({
@@ -84,6 +99,13 @@ export function usePinMutations() {
       );
 
       router.refresh();
+
+      // If the photo was swapped, remove the old Drive file (best-effort).
+      const oldUrl = (existing as { photo_url?: string } | null)?.photo_url;
+      if (oldUrl && oldUrl !== data.photo_url) {
+        cleanupDrivePhoto(oldUrl);
+      }
+
       return { ok: true };
     },
     [supabase, router],
@@ -97,8 +119,18 @@ export function usePinMutations() {
         setActive?: React.Dispatch<React.SetStateAction<MapPin | null>>;
       },
     ): Promise<{ ok: boolean }> => {
+      // Grab the photo URL before the row disappears (for Drive cleanup).
+      const { data: existing } = await supabase
+        .from("pins")
+        .select("photo_url")
+        .eq("id", id)
+        .single();
+
       const { error } = await supabase.from("pins").delete().eq("id", id);
       if (error) return { ok: false };
+
+      // Best-effort: remove the Drive file so it doesn't orphan.
+      cleanupDrivePhoto((existing as { photo_url?: string } | null)?.photo_url);
 
       opts.setPins((prev) => prev.filter((p) => p.id !== id));
       opts.setActive?.((prev) => (prev?.id === id ? null : prev));

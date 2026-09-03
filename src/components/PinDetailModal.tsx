@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { uploadPinPhoto, validatePhotoFile } from "@/lib/uploadPinPhoto";
 import type { MapPin } from "@/lib/pin";
 
 export interface PinEditPatch {
@@ -41,6 +42,10 @@ export default function PinDetailModal({
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(pin.photo_url);
+  const [photoMode, setPhotoMode] = useState<"upload" | "link">("link");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [title, setTitle] = useState(pin.title ?? "");
   const [visitedAt, setVisitedAt] = useState(pin.visited_at ?? "");
   const [tags, setTags] = useState(pin.tags ?? "");
@@ -60,8 +65,31 @@ export default function PinDetailModal({
 
   async function saveFull() {
     setSaving(true);
+    setFormError(null);
+
+    // Resolve the photo source: a newly-uploaded file, or the pasted URL
+    // (which defaults to the pin's existing URL).
+    let finalPhotoUrl = photoUrl.trim();
+    if (photoMode === "upload" && photoFile) {
+      const v = validatePhotoFile(photoFile);
+      if (!v.ok) {
+        setSaving(false);
+        setFormError(
+          v.reason === "size" ? t("Add.photoTooLarge") : t("Add.photoInvalidType"),
+        );
+        return;
+      }
+      try {
+        finalPhotoUrl = await uploadPinPhoto(photoFile);
+      } catch {
+        setSaving(false);
+        setFormError(t("Errors.couldNotUploadPhoto"));
+        return;
+      }
+    }
+
     await onSave?.({
-      photo_url: photoUrl.trim(),
+      photo_url: finalPhotoUrl,
       lat: pin.lat,
       lng: pin.lng,
       city: city.trim(),
@@ -75,6 +103,27 @@ export default function PinDetailModal({
     setEditing(false);
   }
 
+  function handleFileChange(file: File | null) {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    if (!file) {
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      return;
+    }
+    const v = validatePhotoFile(file);
+    if (!v.ok) {
+      setFormError(
+        v.reason === "size" ? t("Add.photoTooLarge") : t("Add.photoInvalidType"),
+      );
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      return;
+    }
+    setFormError(null);
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
+
   async function handleDelete() {
     setDeleting(true);
     await onDelete?.(pin.id);
@@ -85,6 +134,9 @@ export default function PinDetailModal({
 
   function startEdit() {
     setPhotoUrl(pin.photo_url);
+    setPhotoMode("link");
+    handleFileChange(null);
+    setFormError(null);
     setTitle(pin.title ?? "");
     setVisitedAt(pin.visited_at ?? "");
     setTags(pin.tags ?? "");
@@ -97,7 +149,17 @@ export default function PinDetailModal({
   function cancelEdit() {
     setEditing(false);
     setNotes(pin.notes);
+    setPhotoMode("link");
+    handleFileChange(null);
+    setFormError(null);
   }
+
+  // Revoke any pending object URL when the modal unmounts.
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
 
   const tagList = (pin.tags ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const inputClass =
@@ -171,29 +233,82 @@ export default function PinDetailModal({
 
           {editing && fullEdit ? (
             <div className="space-y-4">
-              <label className={labelClass}>
-                {t("Add.photoLink")}
-                <input
-                  type="url"
-                  required
-                  value={photoUrl}
-                  onChange={(e) => setPhotoUrl(e.target.value)}
-                  placeholder={t("Add.photoPlaceholder")}
-                  className={inputClass}
-                />
-              </label>
-              {photoUrl && (
-                <div className="overflow-hidden rounded-xl border border-border">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photoUrl}
-                    alt="preview"
-                    className="max-h-48 w-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
-                    }}
-                  />
+              {/* Photo — link mode (prefilled) or upload a replacement */}
+              {photoMode === "link" ? (
+                <div>
+                  <label className={labelClass}>
+                    {t("Add.photoLink")}
+                    <input
+                      type="url"
+                      required
+                      value={photoUrl}
+                      onChange={(e) => setPhotoUrl(e.target.value)}
+                      placeholder={t("Add.photoPlaceholder")}
+                      className={inputClass}
+                    />
+                  </label>
+                  {photoUrl && (
+                    <div className="mt-2 overflow-hidden rounded-xl border border-border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photoUrl}
+                        alt="preview"
+                        className="max-h-48 w-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
+                        }}
+                      />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPhotoMode("upload")}
+                    className="mt-1 text-xs font-medium text-magenta hover:underline"
+                  >
+                    {t("Add.useUploadInstead")}
+                  </button>
                 </div>
+              ) : (
+                <div>
+                  <span className={labelClass}>{t("Add.uploadPhoto")}</span>
+                  <label className="mt-1 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-surface-2 px-4 py-6 text-center transition hover:border-magenta/50">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                    />
+                    {photoPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={photoPreview}
+                        alt="preview"
+                        className="max-h-48 w-full rounded-lg object-cover"
+                      />
+                    ) : (
+                      <>
+                        <span className="text-3xl" aria-hidden>📷</span>
+                        <span className="text-sm font-medium">{t("Add.chooseFile")}</span>
+                        <span className="text-xs text-ink-muted">JPG · PNG · WebP · GIF — max 5MB</span>
+                      </>
+                    )}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhotoMode("link");
+                      handleFileChange(null);
+                    }}
+                    className="mt-1 text-xs font-medium text-magenta hover:underline"
+                  >
+                    {t("Add.orPasteLink")}
+                  </button>
+                </div>
+              )}
+              {formError && (
+                <p className="rounded-xl bg-danger/10 p-3 text-sm text-danger">
+                  {formError}
+                </p>
               )}
 
               <label className={labelClass}>

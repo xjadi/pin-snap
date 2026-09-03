@@ -91,10 +91,54 @@ supabase/schema.sql     # Tables, RLS, trigger
   (enforced by RLS).
 - The map uses CARTO Voyager tiles (free, casual style) and defaults to a
   Thailand view at zoom 5.
-- Photo and avatar storage is **link-based only** — no file uploads.
+- Pin photos support **two input modes**: upload a file (stored in Google Drive
+  via a service account, served through `/api/photo/<id>` — stable, permanent
+  URLs) or paste an image link (legacy). Avatar storage remains link/preset
+  based.
+
+## Photo storage setup (Google Drive)
+
+Pin photo uploads are stored in Google Drive via a **service account** and
+served through a Next.js proxy route, so `photo_url` never rots. One-time setup:
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com) → create
+   (or pick) a project → **APIs & Services → Library** → enable the
+   **Google Drive API**.
+2. **IAM & Admin → Service Accounts → Create service account** (any name, e.g.
+   `pinsnap-uploader`). Then open it → **Keys → Add key → Create new key →
+   JSON** and download the key file.
+3. In Google Drive, create a folder (e.g. `pinsnap-photos`). **Share** it with
+   the service account's email address (`…@….iam.gserviceaccount.com`) as
+   **Editor**. Copy the **folder ID** from the folder URL
+   (`https://drive.google.com/drive/folders/<FOLDER_ID>`).
+4. Add to `.env.local` (server-only — never prefix with `NEXT_PUBLIC`):
+
+   ```
+   GOOGLE_CLIENT_EMAIL=<service-account email from the JSON key>
+   GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n…\n-----END PRIVATE KEY-----\n"
+   GOOGLE_DRIVE_FOLDER_ID=<folder id>
+   ```
+
+   Keep the `\n` escapes and the surrounding quotes in `GOOGLE_PRIVATE_KEY`.
+
+How it works:
+
+- **Upload**: `POST /api/upload` (auth required) → validates type/size
+  (JPG/PNG/WebP/GIF, ≤ 5MB) → uploads into the shared Drive folder → makes the
+  file link-readable → returns `/api/photo/<fileId>`, which is stored in
+  `pins.photo_url`.
+- **Serve**: `GET /api/photo/<fileId>` fetches the bytes with the service
+  account and re-serves them with `Cache-Control: public, max-age=31536000,
+  immutable` (files are write-once, so caching is safe).
+- **Cleanup**: deleting a pin (or replacing its photo) best-effort deletes the
+  Drive file via `DELETE /api/photo/<fileId>` so files don't orphan.
+
+Existing pins with pasted external URLs keep working (and rotting) — only new
+uploads go to Drive. A future migration could backfill them.
 
 ## Deploy (Vercel)
 
 1. Push to a Git repo and import it in Vercel.
-2. Add the same env vars in the Vercel project settings.
+2. Add the same env vars in the Vercel project settings (including the three
+   `GOOGLE_*` vars — set `GOOGLE_PRIVATE_KEY` with the same `\n` escapes).
 3. In Supabase, add your Vercel URL + `/auth/callback` to the redirect URLs.

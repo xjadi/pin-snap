@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { usePinMutations } from "@/lib/usePinMutations";
 import { reverseGeocode, searchPlace, type GeocodeResult } from "@/lib/geocode";
+import { uploadPinPhoto, validatePhotoFile } from "@/lib/uploadPinPhoto";
 import type { MapPin } from "@/lib/pin";
 
 export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) {
@@ -27,6 +28,9 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
   } | null>(null);
   const [reverseLoading, setReverseLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
+  const [photoMode, setPhotoMode] = useState<"upload" | "link">("upload");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [visitedAt, setVisitedAt] = useState("");
   const [tags, setTags] = useState("");
@@ -87,6 +91,44 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
+  // Revoke any pending object URL when the component unmounts.
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
+
+  function handleFileChange(file: File | null) {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    if (!file) {
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      return;
+    }
+    const v = validatePhotoFile(file);
+    if (!v.ok) {
+      setError(v.reason === "size" ? t("Add.photoTooLarge") : t("Add.photoInvalidType"));
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      return;
+    }
+    setError(null);
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  function switchPhotoMode(mode: "upload" | "link") {
+    setPhotoMode(mode);
+    setError(null);
+    if (mode === "upload") {
+      // Clear the pasted link when switching back to upload.
+      setPhotoUrl("");
+    } else {
+      // Drop the selected file when switching to link mode.
+      handleFileChange(null);
+    }
+  }
+
   function pickResult(r: GeocodeResult) {
     setShowDropdown(false);
     setQuery(r.displayName.split(",")[0]);
@@ -123,6 +165,32 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!draft) return;
+
+    // Resolve the photo source first (upload a file or use a pasted link).
+    let finalPhotoUrl = photoUrl.trim();
+    if (photoMode === "upload") {
+      if (!photoFile) {
+        setError(t("Add.choosePhotoFirst"));
+        return;
+      }
+      const v = validatePhotoFile(photoFile);
+      if (!v.ok) {
+        setError(v.reason === "size" ? t("Add.photoTooLarge") : t("Add.photoInvalidType"));
+        return;
+      }
+      setSaving(true);
+      setError(null);
+      try {
+        finalPhotoUrl = await uploadPinPhoto(photoFile);
+      } catch {
+        setSaving(false);
+        setError(t("Errors.couldNotUploadPhoto"));
+        return;
+      }
+    } else if (!finalPhotoUrl) {
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
@@ -139,7 +207,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
       .from("pins")
       .insert({
         user_id: user.id,
-        photo_url: photoUrl.trim(),
+        photo_url: finalPhotoUrl,
         lat: draft.lat,
         lng: draft.lng,
         city: draft.city,
@@ -179,6 +247,8 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
 
     setPins((prev) => [newPin, ...prev]);
     setDraft(null);
+    handleFileChange(null);
+    setPhotoMode("upload");
     setPhotoUrl("");
     setTitle("");
     setVisitedAt("");
@@ -291,29 +361,73 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
                 </p>
               </div>
 
-              <label className={labelClass}>
-                {t("Add.photoLink")}
-                <input
-                  type="url"
-                  required
-                  value={photoUrl}
-                  onChange={(e) => setPhotoUrl(e.target.value)}
-                  placeholder={t("Add.photoPlaceholder")}
-                  className={inputClass}
-                />
-              </label>
-
-              {photoUrl && (
-                <div className="overflow-hidden rounded-xl border border-border">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photoUrl}
-                    alt="preview"
-                    className="max-h-48 w-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
-                    }}
-                  />
+              {/* Photo — file picker primary, "or paste a link" toggle */}
+              {photoMode === "upload" ? (
+                <div>
+                  <span className={labelClass}>{t("Add.uploadPhoto")}</span>
+                  <label className="mt-1 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-surface-2 px-4 py-6 text-center transition hover:border-magenta/50">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                    />
+                    {photoPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={photoPreview}
+                        alt="preview"
+                        className="max-h-48 w-full rounded-lg object-cover"
+                      />
+                    ) : (
+                      <>
+                        <span className="text-3xl" aria-hidden>📷</span>
+                        <span className="text-sm font-medium">{t("Add.chooseFile")}</span>
+                        <span className="text-xs text-ink-muted">JPG · PNG · WebP · GIF — max 5MB</span>
+                      </>
+                    )}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => switchPhotoMode("link")}
+                    className="mt-1 text-xs font-medium text-magenta hover:underline"
+                  >
+                    {t("Add.orPasteLink")}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label className={labelClass}>
+                    {t("Add.photoLink")}
+                    <input
+                      type="url"
+                      required
+                      value={photoUrl}
+                      onChange={(e) => setPhotoUrl(e.target.value)}
+                      placeholder={t("Add.photoPlaceholder")}
+                      className={inputClass}
+                    />
+                  </label>
+                  {photoUrl && (
+                    <div className="mt-2 overflow-hidden rounded-xl border border-border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photoUrl}
+                        alt="preview"
+                        className="max-h-48 w-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
+                        }}
+                      />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => switchPhotoMode("upload")}
+                    className="mt-1 text-xs font-medium text-magenta hover:underline"
+                  >
+                    {t("Add.useUploadInstead")}
+                  </button>
                 </div>
               )}
 

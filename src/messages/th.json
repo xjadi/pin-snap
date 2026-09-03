@@ -86,6 +86,14 @@
     "unknownSpot": "ไม่ระบุสถานที่",
     "photoLink": "ลิงก์รูปภาพ",
     "photoPlaceholder": "https://…/photo.jpg",
+    "uploadPhoto": "อัปโหลดรูปภาพ",
+    "uploading": "กำลังอัปโหลด…",
+    "orPasteLink": "หรือวางลิงก์รูป",
+    "useUploadInstead": "หรืออัปโหลดรูปแทน",
+    "photoTooLarge": "รูปต้องมีขนาดไม่เกิน 5MB",
+    "photoInvalidType": "รองรับเฉพาะรูป JPG, PNG, WebP หรือ GIF",
+    "chooseFile": "เลือกรูปภาพ",
+    "choosePhotoFirst": "กรุณาเลือกรูปภาพก่อน",
     "title": "หัวข้อ",
     "optional": "(ไม่บังคับ)",
     "dateVisited": "วันที่ไปเยือน",
@@ -141,7 +149,8 @@
   "Errors": {
     "couldNotSavePin": "ไม่สามารถบันทึกหมุดได้",
     "couldNotUpdatePin": "ไม่สามารถแก้ไขหมุดได้",
-    "couldNotDeletePin": "ไม่สามารถลบหมุดได้"
+    "couldNotDeletePin": "ไม่สามารถลบหมุดได้",
+    "couldNotUploadPhoto": "ไม่สามารถอัปโหลดรูปได้ กรุณาลองอีกครั้ง"
   },
   "Fallback": {
     "pinner": "ผู้ปักหมุด",

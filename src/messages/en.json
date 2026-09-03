@@ -86,6 +86,14 @@
     "unknownSpot": "Unknown spot",
     "photoLink": "Photo link",
     "photoPlaceholder": "https://…/photo.jpg",
+    "uploadPhoto": "Upload a photo",
+    "uploading": "Uploading…",
+    "orPasteLink": "or paste a link",
+    "useUploadInstead": "upload a photo instead",
+    "photoTooLarge": "Photo must be under 5MB",
+    "photoInvalidType": "Only JPG, PNG, WebP or GIF photos are supported",
+    "chooseFile": "Choose photo",
+    "choosePhotoFirst": "Choose a photo first",
     "title": "Title",
     "optional": "(optional)",
     "dateVisited": "Date visited",
@@ -141,7 +149,8 @@
   "Errors": {
     "couldNotSavePin": "Could not save pin.",
     "couldNotUpdatePin": "Could not update pin.",
-    "couldNotDeletePin": "Could not delete pin."
+    "couldNotDeletePin": "Could not delete pin.",
+    "couldNotUploadPhoto": "Could not upload the photo. Please try again."
   },
   "Fallback": {
     "pinner": "Pinner",

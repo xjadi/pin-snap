@@ -176,7 +176,7 @@ export default function MapView({
       return `
         <div style="width:200px;overflow:hidden;border-radius:12px;background:${popupBg};">
           <div style="height:112px;width:100%;background:${popupSub};">
-            <img src="${escapeHtml(pin.photo_url)}" alt="pin" style="height:112px;width:100%;object-fit:cover;" />
+            <img src="${escapeHtml(pin.photo_url)}" alt="pin" style="height:112px;width:100%;object-fit:cover;" onerror="this.style.opacity='0.2'" />
           </div>
           <div style="padding:8px 12px;">
             <p style="margin:0;font-size:14px;font-weight:600;color:${popupText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(pin.owner_display_name || "Pinner")}</p>
