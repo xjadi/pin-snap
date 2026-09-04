@@ -23,39 +23,18 @@ interface MapViewProps {
   };
 }
 
-function basestyle(dark: boolean) {
-  const tiles = dark
-    ? [
-        "https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png",
-      ]
-    : [
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-      ];
-  return {
-    version: 8 as const,
-    sources: {
-      basemap: {
-        type: "raster" as const,
-        tiles,
-        tileSize: 256,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      },
-    },
-    layers: [
-      {
-        id: "tiles",
-        type: "raster" as const,
-        source: "basemap",
-        minzoom: 0,
-        maxzoom: 20,
-      },
-    ],
-  };
+// CARTO basemap styles. Since Aug 2026 CARTO watermarks raster (PNG) tiles
+// served without an API key and is retiring the raster service, so we use
+// their vector (GL) styles instead — sharper on retina, same cartography
+// families (Voyager light / Dark Matter dark). An optional free key from
+// https://carto.com/basemaps/apikey can be set via NEXT_PUBLIC_CARTO_API_KEY;
+// CARTO plans to require it for vector too, so setting it is future-proof.
+const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
+
+function basestyle(dark: boolean): string {
+  const style = dark ? "dark-matter-gl-style" : "voyager-gl-style";
+  const key = CARTO_KEY ? `?key=${encodeURIComponent(CARTO_KEY)}` : "";
+  return `https://basemaps.cartocdn.com/gl/${style}/style.json${key}`;
 }
 
 export default function MapView({
@@ -102,7 +81,11 @@ export default function MapView({
         THAILAND_CENTER.lat,
       ]) as [number, number],
       zoom: initialZoom,
-      attributionControl: { compact: true },
+      attributionControl: {
+        compact: true,
+        customAttribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      },
     });
 
     map.addControl(

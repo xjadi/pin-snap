@@ -89,8 +89,18 @@ supabase/schema.sql     # Tables, RLS, trigger
 - All pins are **public** to anyone (per your spec). Memos are visible publicly
   too in this configuration; only the owner can edit/delete their own pins
   (enforced by RLS).
-- The map uses CARTO Voyager tiles (free, casual style) and defaults to a
-  Thailand view at zoom 5.
+- The map uses **CARTO vector basemaps** (Voyager light / Dark Matter dark) and
+  defaults to a Thailand view at zoom 5. CARTO began watermarking their
+  keyless **raster** tiles in August 2026 and is retiring that service, so the
+  app renders their **vector** styles via MapLibre GL instead — same
+  cartography, sharper on retina. CARTO plans to require an API key for vector
+  too, so set a free key to be safe: request one at
+  <https://carto.com/basemaps/apikey> (no approval queue, fair use 5M tile
+  requests/month) and put it in `.env.local` as
+  `NEXT_PUBLIC_CARTO_API_KEY=…`. The app works without it today, but the key
+  future-proofs the basemap. If CARTO's terms ever stop fitting, OpenFreeMap
+  (<https://openfreemap.org>) serves equivalent keyless vector styles
+  (Positron/Dark Matter) that drop into the same `basestyle()` helper.
 - Pin photos support **two input modes**: upload a file (stored in Google Drive
   via a service account, served through `/api/photo/<id>` — stable, permanent
   URLs) or paste an image link (legacy). Avatar storage remains link/preset
