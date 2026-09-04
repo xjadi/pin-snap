@@ -97,8 +97,10 @@ supabase/schema.sql     # Tables, RLS, trigger
   too, so set a free key to be safe: request one at
   <https://carto.com/basemaps/apikey> (no approval queue, fair use 5M tile
   requests/month) and put it in `.env.local` as
-  `NEXT_PUBLIC_CARTO_API_KEY=…`. The app works without it today, but the key
-  future-proofs the basemap. If CARTO's terms ever stop fitting, OpenFreeMap
+  `NEXT_PUBLIC_CARTO_API_KEY=…`. Any basemaps key covers **both** the raster
+  and vector services — you only ever need one key. The app works without it
+  today, but the key future-proofs the basemap. If CARTO's terms ever stop
+  fitting, OpenFreeMap
   (<https://openfreemap.org>) serves equivalent keyless vector styles
   (Positron/Dark Matter) that drop into the same `basestyle()` helper.
 - Pin photos support **two input modes**: upload a file (stored in Google Drive
