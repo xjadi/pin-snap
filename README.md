@@ -103,6 +103,15 @@ supabase/schema.sql     # Tables, RLS, trigger
   fitting, OpenFreeMap
   (<https://openfreemap.org>) serves equivalent keyless vector styles
   (Positron/Dark Matter) that drop into the same `basestyle()` helper.
+- **MapLibre worker note:** Next.js (Turbopack) does not emit maplibre-gl v6's
+  separate worker chunk, so vector basemaps silently never load (blank map,
+  no console error — raster worked because raster tiles fetch on the main
+  thread). The fix in place: `scripts/copy-maplibre-worker.mjs` (runs on
+  `postinstall`) copies `maplibre-gl-worker.mjs` + `maplibre-gl-shared.mjs`
+  into `public/`, and `MapView.tsx` calls
+  `setWorkerUrl("/maplibre-gl-worker.mjs")` before the first map is created.
+  If you upgrade `maplibre-gl`, re-run `npm install` (the postinstall hook
+  refreshes the copies).
 - Pin photos support **two input modes**: upload a file (stored in Google Drive
   via a service account, served through `/api/photo/<id>` — stable, permanent
   URLs) or paste an image link (legacy). Avatar storage remains link/preset

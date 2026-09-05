@@ -73,6 +73,14 @@ export default function MapView({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    // Turbopack does not emit maplibre-gl's separate worker chunk, so the
+    // default worker URL resolution 404s and vector basemaps hang silently.
+    // Point maplibre at the worker files we serve from /public instead
+    // (kept in sync by the postinstall script).
+    if (typeof window !== "undefined") {
+      maplibregl.setWorkerUrl("/maplibre-gl-worker.mjs");
+    }
+
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: basestyle(resolvedTheme === "dark"),
