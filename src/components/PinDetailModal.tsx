@@ -3,7 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { uploadPinPhoto, validatePhotoFile } from "@/lib/uploadPinPhoto";
+import {
+  importPhotoFromUrl,
+  isManagedPhotoUrl,
+  uploadPinPhoto,
+  validatePhotoFile,
+} from "@/lib/uploadPinPhoto";
 import type { MapPin } from "@/lib/pin";
 
 export interface PinEditPatch {
@@ -85,6 +90,20 @@ export default function PinDetailModal({
         setSaving(false);
         setFormError(t("Errors.couldNotUploadPhoto"));
         return;
+      }
+    } else if (photoMode === "link" && finalPhotoUrl) {
+      // Auto-import an external link into Drive so the stored URL is stable.
+      // (Skip if it's already our own /api/photo URL or the unchanged
+      // existing URL.)
+      const unchanged = finalPhotoUrl === pin.photo_url;
+      if (!unchanged && !isManagedPhotoUrl(finalPhotoUrl)) {
+        try {
+          finalPhotoUrl = await importPhotoFromUrl(finalPhotoUrl);
+        } catch {
+          setSaving(false);
+          setFormError(t("Errors.linkImportFailed"));
+          return;
+        }
       }
     }
 

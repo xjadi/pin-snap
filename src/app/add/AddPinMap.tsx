@@ -9,7 +9,12 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { usePinMutations } from "@/lib/usePinMutations";
 import { reverseGeocode, searchPlace, type GeocodeResult } from "@/lib/geocode";
-import { uploadPinPhoto, validatePhotoFile } from "@/lib/uploadPinPhoto";
+import {
+  importPhotoFromUrl,
+  isManagedPhotoUrl,
+  uploadPinPhoto,
+  validatePhotoFile,
+} from "@/lib/uploadPinPhoto";
 import type { MapPin } from "@/lib/pin";
 
 export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) {
@@ -166,7 +171,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
     e.preventDefault();
     if (!draft) return;
 
-    // Resolve the photo source first (upload a file or use a pasted link).
+    // Resolve the photo source first (upload a file or import a pasted link).
     let finalPhotoUrl = photoUrl.trim();
     if (photoMode === "upload") {
       if (!photoFile) {
@@ -187,8 +192,21 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
         setError(t("Errors.couldNotUploadPhoto"));
         return;
       }
-    } else if (!finalPhotoUrl) {
-      return;
+    } else {
+      // Link mode: auto-import the linked image into Drive so photo_url is
+      // stable (never rots). If the import fails, block the save.
+      if (!finalPhotoUrl) return;
+      if (!isManagedPhotoUrl(finalPhotoUrl)) {
+        setSaving(true);
+        setError(null);
+        try {
+          finalPhotoUrl = await importPhotoFromUrl(finalPhotoUrl);
+        } catch {
+          setSaving(false);
+          setError(t("Errors.linkImportFailed"));
+          return;
+        }
+      }
     }
 
     setSaving(true);
@@ -484,7 +502,11 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
                 disabled={saving}
                 className="w-full rounded-xl bg-magenta px-4 py-2.5 font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
               >
-                {saving ? t("Add.saving") : t("Add.save")}
+                {saving
+                  ? photoMode === "link" && !isManagedPhotoUrl(photoUrl.trim())
+                    ? t("Add.importing")
+                    : t("Add.saving")
+                  : t("Add.save")}
               </button>
 
               <button

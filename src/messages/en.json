@@ -106,6 +106,7 @@
     "writeMemoPlaceholder": "Write a memory about this spot…",
     "save": "Save pin",
     "saving": "Saving…",
+    "importing": "Importing photo…",
     "cancel": "Cancel"
   },
   "Modal": {
@@ -150,7 +151,8 @@
     "couldNotSavePin": "Could not save pin.",
     "couldNotUpdatePin": "Could not update pin.",
     "couldNotDeletePin": "Could not delete pin.",
-    "couldNotUploadPhoto": "Could not upload the photo. Please try again."
+    "couldNotUploadPhoto": "Could not upload the photo. Please try again.",
+    "linkImportFailed": "Couldn't save this image from the link — it may be expired or blocked. Try uploading the photo file instead."
   },
   "Fallback": {
     "pinner": "Pinner",

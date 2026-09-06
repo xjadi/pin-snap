@@ -104,3 +104,28 @@ alter table public.pins
 
 alter table public.pins
   add column if not exists tags text;
+
+-- =====================================================================
+-- Migration: photo storage — Supabase Storage `pins` bucket
+-- Photos live at pins/<userId>/<uuid>.<ext> (per-user folders for easy
+-- cleanup). The app's API routes enforce ownership themselves (they
+-- authenticate the user and derive the path from the authenticated id),
+-- so these policies are OPTIONAL hardening for direct client access.
+-- Safe to re-run.
+-- =====================================================================
+insert into storage.buckets (id, name, public)
+  values ('pins', 'pins', true)
+  on conflict (id) do nothing;
+
+-- Optional: allow users to manage their own folder via the client SDK.
+create policy "pin_uploads_owner"
+  on storage.objects for insert
+  with check (bucket_id = 'pins' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "pin_read_all"
+  on storage.objects for select
+  using (bucket_id = 'pins');
+
+create policy "pin_delete_owner"
+  on storage.objects for delete
+  using (bucket_id = 'pins' and (storage.foldername(name))[1] = auth.uid()::text);

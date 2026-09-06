@@ -112,54 +112,44 @@ supabase/schema.sql     # Tables, RLS, trigger
   `setWorkerUrl("/maplibre-gl-worker.mjs")` before the first map is created.
   If you upgrade `maplibre-gl`, re-run `npm install` (the postinstall hook
   refreshes the copies).
-- Pin photos support **two input modes**: upload a file (stored in Google Drive
-  via a service account, served through `/api/photo/<id>` — stable, permanent
-  URLs) or paste an image link (legacy). Avatar storage remains link/preset
-  based.
+- Pin photos support **two input modes**: upload a file, or paste an image
+  link — **both are stored in Supabase Storage** under `pins/<userId>/…`
+  (per-user folders, easy bulk cleanup), and `photo_url` always ends up as a
+  permanent Supabase CDN URL that never rots. Pasted links are auto-imported:
+  the server fetches the image, stores it, and blocks the save with a clear
+  error if the link is expired or blocked. Avatar storage remains
+  link/preset based.
 
-## Photo storage setup (Google Drive)
+## Photo storage (Supabase Storage)
 
-Pin photo uploads are stored in Google Drive via a **service account** and
-served through a Next.js proxy route, so `photo_url` never rots. One-time setup:
+Photos live in the public **`pins`** bucket at `pins/<userId>/<uuid>.<ext>`.
+The upload/delete API routes authenticate the user and always derive the path
+from the authenticated user's id, so users can only touch their own folder.
+Deleting a pin (or replacing its photo) best-effort removes the stored file so
+nothing orphans.
 
-1. Go to the [Google Cloud Console](https://console.cloud.google.com) → create
-   (or pick) a project → **APIs & Services → Library** → enable the
-   **Google Drive API**.
-2. **IAM & Admin → Service Accounts → Create service account** (any name, e.g.
-   `pinsnap-uploader`). Then open it → **Keys → Add key → Create new key →
-   JSON** and download the key file.
-3. In Google Drive, create a folder (e.g. `pinsnap-photos`). **Share** it with
-   the service account's email address (`…@….iam.gserviceaccount.com`) as
-   **Editor**. Copy the **folder ID** from the folder URL
-   (`https://drive.google.com/drive/folders/<FOLDER_ID>`).
-4. Add to `.env.local` (server-only — never prefix with `NEXT_PUBLIC`):
+Setup (one-time):
 
-   ```
-   GOOGLE_CLIENT_EMAIL=<service-account email from the JSON key>
-   GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n…\n-----END PRIVATE KEY-----\n"
-   GOOGLE_DRIVE_FOLDER_ID=<folder id>
-   ```
+1. The bucket is created by the SQL at the bottom of
+   [`supabase/schema.sql`](supabase/schema.sql) (or via the dashboard: create a
+   **public** bucket named `pins`). The optional hardening policies for direct
+   client-SDK access are in the same file — paste them in the SQL editor if
+   you want them.
+2. Set `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` (server-only — found in
+   Supabase → Settings → API). It powers the server-side storage client.
 
-   Keep the `\n` escapes and the surrounding quotes in `GOOGLE_PRIVATE_KEY`.
-
-How it works:
-
-- **Upload**: `POST /api/upload` (auth required) → validates type/size
-  (JPG/PNG/WebP/GIF, ≤ 5MB) → uploads into the shared Drive folder → makes the
-  file link-readable → returns `/api/photo/<fileId>`, which is stored in
-  `pins.photo_url`.
-- **Serve**: `GET /api/photo/<fileId>` fetches the bytes with the service
-  account and re-serves them with `Cache-Control: public, max-age=31536000,
-  immutable` (files are write-once, so caching is safe).
-- **Cleanup**: deleting a pin (or replacing its photo) best-effort deletes the
-  Drive file via `DELETE /api/photo/<fileId>` so files don't orphan.
-
-Existing pins with pasted external URLs keep working (and rotting) — only new
-uploads go to Drive. A future migration could backfill them.
+**History note:** we first tried Google Drive with a service account, but
+Google hard-blocks that combination on personal accounts — service accounts
+own the files they upload and have **zero storage quota** (`403
+storageQuotaExceeded`), even when uploading into a folder shared with them.
+The only Google escapes are Shared Drives (requires Google Workspace) or
+per-user OAuth. The Drive proxy code (`/api/photo/<id>`,
+`src/lib/google/drive.ts`) remains in the repo and works if you ever move to a
+Shared Drive; the active backend is Supabase Storage.
 
 ## Deploy (Vercel)
 
 1. Push to a Git repo and import it in Vercel.
-2. Add the same env vars in the Vercel project settings (including the three
-   `GOOGLE_*` vars — set `GOOGLE_PRIVATE_KEY` with the same `\n` escapes).
+2. Add the same env vars in the Vercel project settings — including
+   `SUPABASE_SERVICE_ROLE_KEY` (server-only storage client).
 3. In Supabase, add your Vercel URL + `/auth/callback` to the redirect URLs.

@@ -1,6 +1,8 @@
 // Server-only Google Drive helper for pin photo storage.
 // Uses a service account (env vars) to upload/fetch/delete files in a
-// shared Drive folder. Never import this from a client component.
+// shared Drive folder. Files are organised in per-user subfolders
+// (<root>/<userId>/…) so any user's files can be cleaned up in bulk.
+// Never import this from a client component.
 
 import { GoogleAuth } from "google-auth-library";
 
@@ -8,6 +10,8 @@ const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 const UPLOAD_URL =
   "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id";
 const FILES_URL = "https://www.googleapis.com/drive/v3/files";
+
+const FOLDER_MIME = "application/vnd.google-apps.folder";
 
 function getCredentials() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
@@ -42,18 +46,95 @@ async function getAccessToken(): Promise<string> {
 
 export const DRIVE_FILE_ID_RE = /^[A-Za-z0-9_-]{10,}$/;
 
-/** Upload image bytes into the shared folder; returns the new Drive file ID. */
+/** Map userId → subfolder id, cached per server process. */
+const subfolderCache = new Map<string, string>();
+
+/** Find-or-create a per-user subfolder inside the shared root folder. */
+export async function driveEnsureSubfolder(userId: string): Promise<string> {
+  const { folderId } = getCredentials();
+  const cached = subfolderCache.get(userId);
+  if (cached) return cached;
+
+  const token = await getAccessToken();
+
+  // Look for an existing subfolder with this name in the root folder.
+  const q = encodeURIComponent(
+    `name = '${userId}' and mimeType = '${FOLDER_MIME}' and '${folderId}' in parents and trashed = false`,
+  );
+  const findRes = await fetch(
+    `${FILES_URL}?q=${q}&fields=files(id,name)&pageSize=1`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (findRes.ok) {
+    const found = (await findRes.json()) as { files?: Array<{ id: string }> };
+    const existing = found.files?.[0]?.id;
+    if (existing) {
+      subfolderCache.set(userId, existing);
+      return existing;
+    }
+  }
+
+  // Not found — create it.
+  const createRes = await fetch(`${FILES_URL}?fields=id`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: userId,
+      mimeType: FOLDER_MIME,
+      parents: [folderId],
+    }),
+  });
+  if (!createRes.ok) {
+    // Race: another request may have just created it — re-check once.
+    if (findRes.ok) {
+      const retry = await fetch(`${FILES_URL}?q=${q}&fields=files(id)&pageSize=1`, {
+        headers: { Authorization: `Bearer ${token}` } ,
+      });
+      if (retry.ok) {
+        const again = (await retry.json()) as { files?: Array<{ id: string }> };
+        if (again.files?.[0]?.id) {
+          subfolderCache.set(userId, again.files[0].id);
+          return again.files[0].id;
+        }
+      }
+    }
+    const detail = await createRes.text();
+    throw new Error(
+      `Drive subfolder create failed (${createRes.status}): ${detail.slice(0, 200)}`,
+    );
+  }
+  const created = (await createRes.json()) as { id?: string };
+  if (!created.id) throw new Error("Drive subfolder create returned no id");
+  subfolderCache.set(userId, created.id);
+  return created.id;
+}
+
+const EXT_BY_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+/**
+ * Upload image bytes into a per-user subfolder; returns the new Drive file ID.
+ */
 export async function driveUpload(
   bytes: ArrayBuffer,
   contentType: string,
+  userId: string,
 ): Promise<string> {
-  const { folderId } = getCredentials();
+  const parentFolderId = await driveEnsureSubfolder(userId);
   const token = await getAccessToken();
 
   const boundary = `pinsnap-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const ext = EXT_BY_TYPE[contentType] ?? "jpg";
   const metadata = JSON.stringify({
-    name: `pin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    parents: [folderId],
+    name: `pin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`,
+    parents: [parentFolderId],
   });
 
   const head = Buffer.from(
