@@ -35,6 +35,7 @@ export default function HomeMap({
   const [active, setActive] = useState<MapPin | null>(null);
   const [activeFilter, setActiveFilter] = useState<PinFilter | null>(null);
   const fitNonceRef = useRef(0);
+  const mapAnchorRef = useRef<HTMLDivElement | null>(null);
   const [fitBoundsState, setFitBoundsState] = useState<{
     bounds: [[number, number], [number, number]];
     nonce: number;
@@ -66,6 +67,8 @@ export default function HomeMap({
         fitNonceRef.current += 1;
         setFitBoundsState({ bounds, nonce: fitNonceRef.current });
       }
+      // The summary lives below the map — bring the filtered result into view.
+      mapAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
       setFitBoundsState(null);
     }
@@ -73,19 +76,6 @@ export default function HomeMap({
 
   return (
     <>
-      {summary && title && (
-        <div className="mb-6">
-          <SummaryPanel
-            pins={localPins}
-            summary={summary}
-            title={title}
-            locale={locale}
-            activeFilter={activeFilter}
-            onFilter={applyFilter}
-          />
-        </div>
-      )}
-
       {/* Clear-filter chip */}
       {activeFilter && (
         <div className="mb-3 flex items-center gap-2">
@@ -100,7 +90,7 @@ export default function HomeMap({
       )}
 
       {/* Map in a polaroid frame */}
-      <div className="polaroid">
+      <div ref={mapAnchorRef} className="polaroid scroll-mt-20">
         <MapView
           pins={filteredPins}
           initialZoom={5}
@@ -133,6 +123,20 @@ export default function HomeMap({
               onClick={() => setActive(p)}
             />
           ))}
+        </div>
+      )}
+
+      {/* Summary — below the thumbnails */}
+      {summary && title && (
+        <div className="mt-8">
+          <SummaryPanel
+            pins={localPins}
+            summary={summary}
+            title={title}
+            locale={locale}
+            activeFilter={activeFilter}
+            onFilter={applyFilter}
+          />
         </div>
       )}
 
