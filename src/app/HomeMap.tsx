@@ -9,6 +9,7 @@ import SummaryPanel from "@/components/SummaryPanel";
 import { useAuth } from "@/components/AuthProvider";
 import { usePinMutations } from "@/lib/usePinMutations";
 import {
+  countryFlag,
   filterPins,
   pinsBounds,
   type MapPin,
@@ -87,6 +88,9 @@ export default function HomeMap({
             onClick={() => applyFilter(null)}
             className="luggage-tag cursor-pointer transition hover:opacity-85"
           >
+            {activeFilter.type === "country" && (
+              <span aria-hidden>{countryFlag(activeFilter.value)}</span>
+            )}
             <span>{activeFilter.value}</span>
             <span className="text-magenta">✕</span>
           </button>

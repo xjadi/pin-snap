@@ -2,7 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { MapPin, PinSummary, PinFilter } from "@/lib/pin";
+import {
+  countryFlag,
+  type MapPin,
+  type PinSummary,
+  type PinFilter,
+} from "@/lib/pin";
 
 type GroupBy = "country" | "city";
 
@@ -145,7 +150,10 @@ export default function SummaryPanel({
                           ▶
                         </span>
                       )}
-                      {c.name}
+                      <span aria-hidden className="text-base leading-none">
+                        {countryFlag(c.name)}
+                      </span>
+                      <span>{c.name}</span>
                     </span>
                     <span className="rounded-xs border border-verde/50 bg-verde/15 px-2 py-0.5 text-xs font-bold text-verde">
                       {t("pinCount", { count: c.count })}

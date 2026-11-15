@@ -117,3 +117,243 @@ export function summarizePins(pins: MapPin[], locale: string = "en"): PinSummary
 
   return { totalPins, totalCountries, totalCities, byCountry };
 }
+
+function isoToFlag(iso2: string): string {
+  const code = iso2.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return "🌍";
+  return String.fromCodePoint(
+    0x1f1e6 + code.charCodeAt(0) - 65,
+    0x1f1e6 + code.charCodeAt(1) - 65,
+  );
+}
+
+const COUNTRY_ALIASES: Record<string, string> = {
+  thailand: "TH",
+  ไทย: "TH",
+  ประเทศไทย: "TH",
+  ราชอาณาจักรไทย: "TH",
+  japan: "JP",
+  ญี่ปุ่น: "JP",
+  ประเทศญี่ปุ่น: "JP",
+  日本: "JP",
+  "south korea": "KR",
+  korea: "KR",
+  "republic of korea": "KR",
+  เกาหลีใต้: "KR",
+  เกาหลี: "KR",
+  ประเทศเกาหลีใต้: "KR",
+  대한민국: "KR",
+  한국: "KR",
+  taiwan: "TW",
+  ไต้หวัน: "TW",
+  台灣: "TW",
+  臺灣: "TW",
+  中華民國: "TW",
+  china: "CN",
+  จีน: "CN",
+  ประเทศจีน: "CN",
+  中国: "CN",
+  中华人民共和国: "CN",
+  "hong kong": "HK",
+  ฮ่องกง: "HK",
+  香港: "HK",
+  macau: "MO",
+  macao: "MO",
+  มาเก๊า: "MO",
+  澳門: "MO",
+  澳门: "MO",
+  vietnam: "VN",
+  "viet nam": "VN",
+  "việt nam": "VN",
+  เวียดนาม: "VN",
+  ประเทศเวียดนาม: "VN",
+  laos: "LA",
+  ลาว: "LA",
+  ประเทศลาว: "LA",
+  "ສປປ ລາວ": "LA",
+  ປະເທດລາວ: "LA",
+  cambodia: "KH",
+  กัมพูชา: "KH",
+  ประเทศกัมพูชา: "KH",
+  កម្ពុជា: "KH",
+  myanmar: "MM",
+  burma: "MM",
+  พม่า: "MM",
+  เมียนมา: "MM",
+  เมียนมาร์: "MM",
+  မြန်မာ: "MM",
+  malaysia: "MY",
+  มาเลเซีย: "MY",
+  ประเทศมาเลเซีย: "MY",
+  singapore: "SG",
+  สิงคโปร์: "SG",
+  ประเทศสิงคโปร์: "SG",
+  singapura: "SG",
+  indonesia: "ID",
+  อินโดนีเซีย: "ID",
+  philippines: "PH",
+  pilipinas: "PH",
+  ฟิลิปปินส์: "PH",
+  india: "IN",
+  อินเดีย: "IN",
+  australia: "AU",
+  ออสเตรเลีย: "AU",
+  "new zealand": "NZ",
+  นิวซีแลนด์: "NZ",
+  "united states": "US",
+  "united states of america": "US",
+  usa: "US",
+  สหรัฐอเมริกา: "US",
+  อเมริกา: "US",
+  "united kingdom": "GB",
+  uk: "GB",
+  "great britain": "GB",
+  england: "GB",
+  scotland: "GB",
+  wales: "GB",
+  สหราชอาณาจักร: "GB",
+  อังกฤษ: "GB",
+  france: "FR",
+  ฝรั่งเศส: "FR",
+  germany: "DE",
+  deutschland: "DE",
+  เยอรมนี: "DE",
+  italy: "IT",
+  italia: "IT",
+  อิตาลี: "IT",
+  spain: "ES",
+  españa: "ES",
+  สเปน: "ES",
+  switzerland: "CH",
+  schweiz: "CH",
+  suisse: "CH",
+  svizzera: "CH",
+  "schweiz/suisse/svizzera/svizra": "CH",
+  สวิตเซอร์แลนด์: "CH",
+  netherlands: "NL",
+  "the netherlands": "NL",
+  nederland: "NL",
+  เนเธอร์แลนด์: "NL",
+  belgium: "BE",
+  belgië: "BE",
+  belgique: "BE",
+  "belgië / belgique / belgien": "BE",
+  เบลเยียม: "BE",
+  austria: "AT",
+  österreich: "AT",
+  ออสเตรีย: "AT",
+  greece: "GR",
+  ελλάδα: "GR",
+  กรีซ: "GR",
+  turkey: "TR",
+  türkiye: "TR",
+  ตุรกี: "TR",
+  russia: "RU",
+  россия: "RU",
+  รัสเซีย: "RU",
+  canada: "CA",
+  แคนาดา: "CA",
+  mexico: "MX",
+  méxico: "MX",
+  เม็กซิโก: "MX",
+  brazil: "BR",
+  brasil: "BR",
+  บราซิล: "BR",
+  norway: "NO",
+  norge: "NO",
+  นอร์เวย์: "NO",
+  sweden: "SE",
+  sverige: "SE",
+  สวีเดน: "SE",
+  denmark: "DK",
+  danmark: "DK",
+  เดนมาร์ก: "DK",
+  finland: "FI",
+  suomi: "FI",
+  ฟินแลนด์: "FI",
+  iceland: "IS",
+  ísland: "IS",
+  ไอซ์แลนด์: "IS",
+  portugal: "PT",
+  โปรตุเกส: "PT",
+  czechia: "CZ",
+  "czech republic": "CZ",
+  česko: "CZ",
+  เช็ก: "CZ",
+  poland: "PL",
+  polska: "PL",
+  โปแลนด์: "PL",
+  hungary: "HU",
+  magyarország: "HU",
+  ฮังการี: "HU",
+  nepal: "NP",
+  เนปาล: "NP",
+  "เนปาล (nepal)": "NP",
+  "united arab emirates": "AE",
+  uae: "AE",
+  สหรัฐอาหรับเอมิเรตส์: "AE",
+  egypt: "EG",
+  อียิปต์: "EG",
+};
+
+let dynamicCountryMap: Map<string, string> | null = null;
+
+function getCountryIsoMap(): Map<string, string> {
+  if (dynamicCountryMap) return dynamicCountryMap;
+  const map = new Map<string, string>();
+
+  for (const [k, v] of Object.entries(COUNTRY_ALIASES)) {
+    map.set(k.toLowerCase(), v);
+  }
+
+  try {
+    const enNames = new Intl.DisplayNames(["en"], { type: "region" });
+    const thNames = new Intl.DisplayNames(["th"], { type: "region" });
+
+    for (let i = 65; i <= 90; i++) {
+      for (let j = 65; j <= 90; j++) {
+        const code = String.fromCharCode(i, j);
+        const en = enNames.of(code);
+        if (en && en !== code && !/^[A-Z]{2}$/.test(en)) {
+          map.set(en.toLowerCase(), code);
+        }
+        const th = thNames.of(code);
+        if (th && th !== code && !/^[A-Z]{2}$/.test(th)) {
+          const thClean = th.toLowerCase();
+          map.set(thClean, code);
+          map.set(`ประเทศ${thClean}`, code);
+          if (thClean.startsWith("ประเทศ")) {
+            map.set(thClean.replace(/^ประเทศ/, ""), code);
+          }
+        }
+      }
+    }
+  } catch {
+    // Fallback to static COUNTRY_ALIASES if Intl.DisplayNames is unavailable.
+  }
+
+  dynamicCountryMap = map;
+  return map;
+}
+
+/** Return the flag emoji for a country name (supports EN, TH, native Nominatim names, and ISO codes). */
+export function countryFlag(countryName: string): string {
+  const raw = KEY(countryName);
+  if (!raw) return "🌍";
+  if (/^[A-Za-z]{2}$/.test(raw)) return isoToFlag(raw);
+
+  const map = getCountryIsoMap();
+  const normalized = raw.toLowerCase();
+  const direct = map.get(normalized);
+  if (direct) return isoToFlag(direct);
+
+  // Nominatim sometimes returns slash-separated multilingual names like "Schweiz/Suisse/Svizzera"
+  if (normalized.includes("/")) {
+    for (const part of normalized.split("/")) {
+      const hit = map.get(part.trim());
+      if (hit) return isoToFlag(hit);
+    }
+  }
+
+  return "🌍";
+}
