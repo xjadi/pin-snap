@@ -14,9 +14,9 @@ export function ThemeToggle() {
       suppressHydrationWarning
       aria-label={isDark ? t("toggleLight") : t("toggleDark")}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="rounded-full px-3 py-1.5 text-ink-muted hover:bg-surface-2 hover:text-ink"
+      className="rounded border border-border bg-surface px-2.5 py-1 text-ink-muted transition hover:bg-surface-2 hover:text-ink"
     >
-      <span aria-hidden className="text-base">
+      <span aria-hidden className="text-sm">
         {isDark ? "☀️" : "🌙"}
       </span>
     </button>

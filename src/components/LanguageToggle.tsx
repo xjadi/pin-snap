@@ -21,7 +21,7 @@ export function LanguageToggle() {
 
   return (
     <div
-      className="inline-flex items-center rounded-full border border-border p-0.5 text-xs"
+      className="font-typewriter inline-flex items-center rounded border border-border bg-surface p-0.5 text-[11px]"
       role="group"
       aria-label={t("toggle")}
     >
@@ -29,7 +29,7 @@ export function LanguageToggle() {
         type="button"
         onClick={toggle}
         disabled={isPending}
-        className={`rounded-full px-2 py-0.5 font-semibold transition ${
+        className={`rounded-xs px-2 py-0.5 font-bold transition ${
           locale === "en"
             ? "bg-magenta text-white"
             : "text-ink-muted hover:text-ink"
@@ -41,7 +41,7 @@ export function LanguageToggle() {
         type="button"
         onClick={toggle}
         disabled={isPending}
-        className={`rounded-full px-2 py-0.5 font-semibold transition ${
+        className={`rounded-xs px-2 py-0.5 font-bold transition ${
           locale === "th"
             ? "bg-magenta text-white"
             : "text-ink-muted hover:text-ink"

@@ -18,8 +18,8 @@ const PRESET_AVATARS = [
 ];
 
 const inputClass =
-  "mt-1 w-full rounded-xl border border-border bg-surface px-4 py-2.5 outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20";
-const labelClass = "block text-sm font-medium text-ink";
+  "mt-1.5 w-full rounded-lg border border-border bg-surface-2/60 px-3.5 py-2 text-sm outline-none focus:border-magenta focus:bg-surface focus:ring-2 focus:ring-magenta/20";
+const labelClass = "font-typewriter block text-xs font-bold uppercase tracking-wider text-ink";
 
 export default function ProfileEditor({
   initial,
@@ -78,100 +78,126 @@ export default function ProfileEditor({
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
-        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-surface-2 ring-2 ring-sun/40">
-          {avatarUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={avatarUrl}
-              alt="avatar"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="text-4xl">🙂</span>
-          )}
+    <section className="relative overflow-hidden rounded-xl border-2 border-border bg-surface shadow-sm">
+      <div className="airmail-stripe" />
+      <div className="p-6 sm:p-7">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-border pb-3">
+          <span className="luggage-tag">{t("editProfile")}</span>
+          <span className="rubber-stamp -rotate-2 text-[10px] text-magenta">
+            TRAVELER ID · PINSNAP
+          </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 space-y-4">
-          <div className="grid grid-cols-6 gap-2">
-            {PRESET_AVATARS.map((url) => (
-              <button
-                key={url}
-                type="button"
-                onClick={() => setAvatarUrl(url)}
-                className={`overflow-hidden rounded-full ring-2 transition ${
-                  avatarUrl === url ? "ring-magenta" : "ring-border hover:ring-magenta/40"
-                }`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="preset" className="h-10 w-10" />
-              </button>
-            ))}
+        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+          <div className="polaroid relative shrink-0 -rotate-2 p-1.5">
+            <div
+              aria-hidden
+              className="scotch-tape absolute -top-2.5 left-1/2 z-10 h-4 w-14 -translate-x-1/2 rotate-2"
+            />
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden bg-surface-2">
+              {avatarUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={avatarUrl}
+                  alt="avatar"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-4xl">🙂</span>
+              )}
+            </div>
           </div>
 
-          <label className={labelClass}>
-            {t("avatarLink")} <span className="text-ink-muted">{t("avatarOrPreset")}</span>
-            <input
-              type="url"
-              value={avatarUrl.startsWith("https://api.dicebear.com") ? "" : avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder={tCommon("avatarPlaceholder")}
-              className={inputClass}
-            />
-          </label>
+          <form onSubmit={handleSubmit} className="flex-1 space-y-4">
+            <div className="grid grid-cols-6 gap-2">
+              {PRESET_AVATARS.map((url) => (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => setAvatarUrl(url)}
+                  className={`overflow-hidden rounded-full ring-2 transition ${
+                    avatarUrl === url
+                      ? "ring-magenta"
+                      : "ring-border hover:ring-magenta/40"
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="preset" className="h-10 w-10" />
+                </button>
+              ))}
+            </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>
-              {tCommon("displayName")}
+              {t("avatarLink")}{" "}
+              <span className="text-ink-muted">{t("avatarOrPreset")}</span>
               <input
-                type="text"
-                required
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={t("displayNamePlaceholder")}
+                type="url"
+                value={
+                  avatarUrl.startsWith("https://api.dicebear.com") ? "" : avatarUrl
+                }
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                placeholder={tCommon("avatarPlaceholder")}
                 className={inputClass}
               />
             </label>
 
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={labelClass}>
+                {tCommon("displayName")}
+                <input
+                  type="text"
+                  required
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder={t("displayNamePlaceholder")}
+                  className={inputClass}
+                />
+              </label>
+
+              <label className={labelClass}>
+                {t("email")}
+                <input
+                  type="text"
+                  value={email}
+                  disabled
+                  className={`${inputClass} border-border/50 bg-surface-2 text-ink-muted`}
+                />
+              </label>
+            </div>
+
             <label className={labelClass}>
-              {t("email")}
-              <input
-                type="text"
-                value={email}
-                disabled
-                className={`${inputClass} border-border/50 bg-surface-2 text-ink-muted`}
+              ✎ {tCommon("bio")}{" "}
+              <span className="text-ink-muted">{tCommon("optional")}</span>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={2}
+                placeholder={t("bioPlaceholder")}
+                className={`${inputClass} journal-lined`}
               />
             </label>
-          </div>
 
-          <label className={labelClass}>
-            {tCommon("bio")} <span className="text-ink-muted">{tCommon("optional")}</span>
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={2}
-              placeholder={t("bioPlaceholder")}
-              className={inputClass}
-            />
-          </label>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-xl bg-magenta px-5 py-2.5 font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
-            >
-              {saving ? t("saving") : t("save")}
-            </button>
-            {saved && !error && (
-              <span className="text-sm text-verde">{t("saved")}</span>
-            )}
-            {error && (
-              <span className="text-sm text-danger">{error}</span>
-            )}
-          </div>
-        </form>
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="font-typewriter rounded-lg border-2 border-ink bg-magenta px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-[2px_2px_0px_var(--ink)] transition hover:translate-y-[-1px] hover:opacity-95 disabled:opacity-60"
+              >
+                {saving ? t("saving") : t("save")}
+              </button>
+              {saved && !error && (
+                <span className="font-typewriter text-xs font-bold text-verde">
+                  ✓ {t("saved")}
+                </span>
+              )}
+              {error && (
+                <span className="font-typewriter text-xs font-bold text-danger">
+                  {error}
+                </span>
+              )}
+            </div>
+          </form>
+        </div>
       </div>
     </section>
   );

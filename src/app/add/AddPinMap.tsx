@@ -291,13 +291,13 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
     !authLoading && Boolean(user && active && active.owner_id === user.id);
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-border bg-surface px-4 py-2.5 outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20";
-  const labelClass = "block text-sm font-medium text-ink";
+    "mt-1.5 w-full rounded-lg border border-border bg-surface-2/60 px-3.5 py-2 text-sm outline-none focus:border-magenta focus:bg-surface focus:ring-2 focus:ring-magenta/20";
+  const labelClass = "font-typewriter block text-xs font-bold uppercase tracking-wider text-ink";
 
   return (
     <>
       {/* Place-name search */}
-      <div ref={searchBoxRef} className="relative mb-4">
+      <div ref={searchBoxRef} className="relative mb-5">
         <div className="relative">
           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted">
             🔎
@@ -308,7 +308,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => results.length && setShowDropdown(true)}
             placeholder={t("Add.searchPlaceholder")}
-            className="w-full rounded-full border border-border bg-surface py-2.5 pl-11 pr-4 text-sm outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20"
+            className="font-typewriter w-full rounded-lg border-2 border-border bg-surface py-2.5 pl-11 pr-4 text-sm outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20"
           />
           {searching && (
             <span className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -318,7 +318,7 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
         </div>
 
         {showDropdown && results.length > 0 && (
-          <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-2xl border border-border bg-surface py-1 shadow-lg">
+          <ul className=" absolute z-20 mt-1 w-full overflow-hidden rounded-lg border-2 border-border bg-surface py-1 shadow-lg">
             {results.map((r, i) => (
               <li key={`${r.lat},${r.lng}-${i}`}>
                 <button
@@ -328,10 +328,10 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
                 >
                   <span className="text-ink-muted">📍</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">
+                    <span className="block truncate font-bold">
                       {r.displayName.split(",")[0]}
                     </span>
-                    <span className="block truncate text-xs text-ink-muted">
+                    <span className="font-typewriter block truncate text-xs text-ink-muted">
                       {r.displayName}
                     </span>
                   </span>
@@ -342,182 +342,210 @@ export default function AddPinMap({ existingPins }: { existingPins: MapPin[] }) 
         )}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
-        <div className="polaroid">
-          <MapView
-            pins={pins}
-            initialZoom={5}
-            onMapClick={handleMapClick}
-            onPinClick={(pin) => setActive(pin)}
-            flyTo={flyTo ?? undefined}
-            className="h-[55vh] w-full"
+      <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+        <div className="polaroid relative">
+          <div
+            aria-hidden
+            className="scotch-tape absolute -left-3 -top-3 z-10 h-6 w-20 -rotate-12"
           />
+          <div
+            aria-hidden
+            className="scotch-tape absolute -right-3 -top-3 z-10 h-6 w-20 rotate-12"
+          />
+          <div className="overflow-hidden border border-border/60">
+            <MapView
+              pins={pins}
+              initialZoom={5}
+              onMapClick={handleMapClick}
+              onPinClick={(pin) => setActive(pin)}
+              flyTo={flyTo ?? undefined}
+              className="h-[55vh] w-full"
+            />
+          </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-          {!draft ? (
-            <div className="flex h-full flex-col items-center justify-center text-center text-ink-muted">
-              <div className="text-4xl">📍</div>
-              <p className="mt-3 max-w-xs">{t("Add.emptyDraft")}</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="rounded-xl bg-sun/10 p-3 text-sm">
-                <p className="font-semibold text-sun">{t("Add.pinLocation")}</p>
-                <p className="text-ink">
-                  {reverseLoading ? (
-                    <span className="inline-flex items-center gap-1">
-                      <span className="h-2 w-2 animate-ping rounded-full bg-sun" />
-                      {t("Add.lookingUp")}
-                    </span>
-                  ) : (
-                    [draft.city, draft.country].filter(Boolean).join(", ") || t("Add.unknownSpot")
-                  )}
-                </p>
-                <p className="mt-1 font-mono text-xs text-ink-muted">
-                  {draft.lat.toFixed(4)}, {draft.lng.toFixed(4)}
+        <div className="relative overflow-hidden rounded-xl border-2 border-border bg-surface shadow-sm">
+          <div className="airmail-stripe" />
+          <div className="p-5">
+            {!draft ? (
+              <div className="deckle-note flex min-h-[42vh] flex-col items-center justify-center rounded-sm p-6 text-center text-ink-muted">
+                <div className="text-4xl">📍</div>
+                <p className="font-typewriter mt-3 max-w-xs text-xs leading-relaxed">
+                  {t("Add.emptyDraft")}
                 </p>
               </div>
-
-              {/* Photo — file picker primary, "or paste a link" toggle */}
-              {photoMode === "upload" ? (
-                <div>
-                  <span className={labelClass}>{t("Add.uploadPhoto")}</span>
-                  <label className="mt-1 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-surface-2 px-4 py-6 text-center transition hover:border-magenta/50">
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      className="hidden"
-                      onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
-                    />
-                    {photoPreview ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={photoPreview}
-                        alt="preview"
-                        className="max-h-48 w-full rounded-lg object-cover"
-                      />
+            ) : (
+              <form onSubmit={handleSave} className="space-y-4">
+                <div className="rounded-lg border border-border bg-kraft/45 p-3 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="luggage-tag">{t("Add.pinLocation")}</span>
+                    <span className="font-typewriter text-xs text-ink-muted">
+                      {draft.lat.toFixed(4)}, {draft.lng.toFixed(4)}
+                    </span>
+                  </div>
+                  <p className="mt-2 font-bold text-ink">
+                    {reverseLoading ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="h-2 w-2 animate-ping rounded-full bg-sun" />
+                        {t("Add.lookingUp")}
+                      </span>
                     ) : (
-                      <>
-                        <span className="text-3xl" aria-hidden>📷</span>
-                        <span className="text-sm font-medium">{t("Add.chooseFile")}</span>
-                        <span className="text-xs text-ink-muted">JPG · PNG · WebP · GIF — max 5MB</span>
-                      </>
+                      [draft.city, draft.country].filter(Boolean).join(", ") ||
+                      t("Add.unknownSpot")
                     )}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => switchPhotoMode("link")}
-                    className="mt-1 text-xs font-medium text-magenta hover:underline"
-                  >
-                    {t("Add.orPasteLink")}
-                  </button>
+                  </p>
                 </div>
-              ) : (
-                <div>
+
+                {/* Photo — file picker primary, "or paste a link" toggle */}
+                {photoMode === "upload" ? (
+                  <div>
+                    <span className={labelClass}>{t("Add.uploadPhoto")}</span>
+                    <label className="mt-1.5 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border bg-surface-2 px-4 py-6 text-center transition hover:border-magenta/50">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                      />
+                      {photoPreview ? (
+                        <div className="polaroid relative w-full max-w-xs">
+                          <div
+                            aria-hidden
+                            className="scotch-tape absolute -top-2.5 left-1/2 z-10 h-5 w-16 -translate-x-1/2 -rotate-2"
+                          />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photoPreview}
+                            alt="preview"
+                            className="max-h-48 w-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-3xl" aria-hidden>📷</span>
+                          <span className="text-sm font-bold">{t("Add.chooseFile")}</span>
+                          <span className="font-typewriter text-xs text-ink-muted">
+                            JPG · PNG · WebP · GIF — max 5MB
+                          </span>
+                        </>
+                      )}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => switchPhotoMode("link")}
+                      className="font-typewriter mt-1.5 text-xs font-bold text-magenta hover:underline"
+                    >
+                      {t("Add.orPasteLink")}
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label className={labelClass}>
+                      {t("Add.photoLink")}
+                      <input
+                        type="url"
+                        required
+                        value={photoUrl}
+                        onChange={(e) => setPhotoUrl(e.target.value)}
+                        placeholder={t("Add.photoPlaceholder")}
+                        className={inputClass}
+                      />
+                    </label>
+                    {photoUrl && (
+                      <div className="polaroid mt-3 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photoUrl}
+                          alt="preview"
+                          className="max-h-48 w-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
+                          }}
+                        />
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => switchPhotoMode("upload")}
+                      className="font-typewriter mt-1.5 text-xs font-bold text-magenta hover:underline"
+                    >
+                      {t("Add.useUploadInstead")}
+                    </button>
+                  </div>
+                )}
+
+                <label className={labelClass}>
+                  {t("Add.title")} <span className="text-ink-muted">{t("Common.optional")}</span>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder={t("Add.titlePlaceholder")}
+                    className={inputClass}
+                  />
+                </label>
+
+                <div className="grid gap-4 sm:grid-cols-2">
                   <label className={labelClass}>
-                    {t("Add.photoLink")}
+                    {t("Add.dateVisited")} <span className="text-ink-muted">{t("Common.optional")}</span>
                     <input
-                      type="url"
-                      required
-                      value={photoUrl}
-                      onChange={(e) => setPhotoUrl(e.target.value)}
-                      placeholder={t("Add.photoPlaceholder")}
+                      type="date"
+                      value={visitedAt}
+                      onChange={(e) => setVisitedAt(e.target.value)}
                       className={inputClass}
                     />
                   </label>
-                  {photoUrl && (
-                    <div className="mt-2 overflow-hidden rounded-xl border border-border">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photoUrl}
-                        alt="preview"
-                        className="max-h-48 w-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.opacity = "0.2";
-                        }}
-                      />
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => switchPhotoMode("upload")}
-                    className="mt-1 text-xs font-medium text-magenta hover:underline"
-                  >
-                    {t("Add.useUploadInstead")}
-                  </button>
+                  <label className={labelClass}>
+                    {t("Add.tags")} <span className="text-ink-muted">{t("Add.commaSeparated")}</span>
+                    <input
+                      type="text"
+                      value={tags}
+                      onChange={(e) => setTags(e.target.value)}
+                      placeholder={t("Add.tagsPlaceholder")}
+                      className={inputClass}
+                    />
+                  </label>
                 </div>
-              )}
 
-              <label className={labelClass}>
-                {t("Add.title")} <span className="text-ink-muted">{t("Common.optional")}</span>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={t("Add.titlePlaceholder")}
-                  className={inputClass}
-                />
-              </label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
                 <label className={labelClass}>
-                  {t("Add.dateVisited")} <span className="text-ink-muted">{t("Common.optional")}</span>
-                  <input
-                    type="date"
-                    value={visitedAt}
-                    onChange={(e) => setVisitedAt(e.target.value)}
-                    className={inputClass}
+                  ✎ {t("Add.memo")} <span className="text-ink-muted">{t("Common.optional")}</span>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                    placeholder={t("Add.memoPlaceholder")}
+                    className={`${inputClass} journal-lined`}
                   />
                 </label>
-                <label className={labelClass}>
-                  {t("Add.tags")} <span className="text-ink-muted">{t("Add.commaSeparated")}</span>
-                  <input
-                    type="text"
-                    value={tags}
-                    onChange={(e) => setTags(e.target.value)}
-                    placeholder={t("Add.tagsPlaceholder")}
-                    className={inputClass}
-                  />
-                </label>
-              </div>
 
-              <label className={labelClass}>
-                {t("Add.memo")} <span className="text-ink-muted">{t("Common.optional")}</span>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  placeholder={t("Add.memoPlaceholder")}
-                  className={inputClass}
-                />
-              </label>
+                {error && (
+                  <p className="font-typewriter rounded-lg border border-danger/40 bg-danger/10 p-3 text-xs text-danger">
+                    {error}
+                  </p>
+                )}
 
-              {error && (
-                <p className="rounded-xl bg-danger/10 p-3 text-sm text-danger">{error}</p>
-              )}
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="font-typewriter w-full rounded-lg border-2 border-ink bg-magenta px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-[3px_3px_0px_var(--ink)] transition hover:translate-y-[-1px] hover:opacity-95 disabled:opacity-60"
+                >
+                  {saving
+                    ? photoMode === "link" && !isManagedPhotoUrl(photoUrl.trim())
+                      ? t("Add.importing")
+                      : t("Add.saving")
+                    : `📌 ${t("Add.save")}`}
+                </button>
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full rounded-xl bg-magenta px-4 py-2.5 font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
-              >
-                {saving
-                  ? photoMode === "link" && !isManagedPhotoUrl(photoUrl.trim())
-                    ? t("Add.importing")
-                    : t("Add.saving")
-                  : t("Add.save")}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDraft(null)}
-                className="w-full rounded-xl px-4 py-2 text-sm text-ink-muted hover:bg-surface-2"
-              >
-                {t("Add.cancel")}
-              </button>
-            </form>
-          )}
+                <button
+                  type="button"
+                  onClick={() => setDraft(null)}
+                  className="font-typewriter w-full rounded-lg border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-ink-muted hover:bg-surface-2"
+                >
+                  {t("Add.cancel")}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
 

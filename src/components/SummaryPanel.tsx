@@ -51,151 +51,169 @@ export default function SummaryPanel({
   }
 
   const rowBase =
-    "flex w-full items-center justify-between py-2 transition";
-  const rowHover = onFilter ? "cursor-pointer hover:bg-surface-2" : "cursor-default";
+    "font-typewriter flex w-full items-center justify-between px-3 py-2.5 text-sm transition";
+  const rowHover = onFilter ? "cursor-pointer hover:bg-surface/40" : "cursor-default";
 
   return (
-    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="font-display text-lg font-bold tracking-tight">
-            {title}
-          </h2>
-          {pins.length > 0 && (
-            <p className="text-sm text-ink-muted">
-              {t("line", {
-                pins: summary.totalPins,
-                countries: summary.totalCountries,
-                cities: summary.totalCities,
-              })}
+    <section className="library-card relative rounded-md p-5 sm:p-6">
+      {/* Top Scotch tape holding down the index card */}
+      <div
+        aria-hidden
+        className="scotch-tape absolute -top-3 left-1/2 h-5 w-24 -translate-x-1/2 rotate-1"
+      />
+
+      <div className="border-2 border-ink/75 bg-surface/25">
+        {/* Library Card Top Metadata Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-ink/75 px-4 py-3">
+          <div>
+            <p className="font-typewriter text-[10px] font-bold uppercase tracking-[0.2em] text-ink-muted">
+              INDEX CARD · RUNNING LOG
             </p>
-          )}
+            <h2 className="font-display text-lg font-bold tracking-tight text-ink">
+              {title}
+            </h2>
+            {pins.length > 0 && (
+              <p className="font-typewriter text-xs text-ink-muted">
+                {t("line", {
+                  pins: summary.totalPins,
+                  countries: summary.totalCountries,
+                  cities: summary.totalCities,
+                })}
+              </p>
+            )}
+          </div>
+
+          <div className="font-typewriter inline-flex rounded border border-ink/60 bg-surface p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setGroupBy("country")}
+              className={`rounded-xs px-3 py-1 font-bold uppercase tracking-wider transition ${
+                groupBy === "country"
+                  ? "bg-magenta text-white"
+                  : "text-ink-muted hover:bg-surface-2 hover:text-ink"
+              }`}
+            >
+              {t("byCountry")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setGroupBy("city")}
+              className={`rounded-xs px-3 py-1 font-bold uppercase tracking-wider transition ${
+                groupBy === "city"
+                  ? "bg-magenta text-white"
+                  : "text-ink-muted hover:bg-surface-2 hover:text-ink"
+              }`}
+            >
+              {t("byCity")}
+            </button>
+          </div>
         </div>
 
-        <div className="inline-flex rounded-full border border-border p-0.5 text-xs">
-          <button
-            type="button"
-            onClick={() => setGroupBy("country")}
-            className={`rounded-full px-3 py-1 font-medium transition ${
-              groupBy === "country"
-                ? "bg-magenta text-white"
-                : "text-ink-muted hover:bg-surface-2 hover:text-ink"
-            }`}
-          >
-            {t("byCountry")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setGroupBy("city")}
-            className={`rounded-full px-3 py-1 font-medium transition ${
-              groupBy === "city"
-                ? "bg-magenta text-white"
-                : "text-ink-muted hover:bg-surface-2 hover:text-ink"
-            }`}
-          >
-            {t("byCity")}
-          </button>
-        </div>
-      </div>
-
-      {groupBy === "country" ? (
-        <ul className="mt-4 divide-y divide-border">
-          {summary.byCountry.map((c) => {
-            const isCountryActive =
-              activeFilter?.type === "country" && activeFilter.value === c.name;
-            // Auto-reveal the city sub-list when this country is the active filter.
-            const showCities = isCountryActive;
-            const hasRealCities = c.cities.some(
-              (city) => city.name !== t("unnamedCity"),
-            );
-            return (
-              <li key={c.name}>
-                <button
-                  type="button"
-                  onClick={() => onFilter && toggleCountry(c.name)}
-                  className={`${rowBase} ${rowHover} ${
-                    isCountryActive ? "bg-magenta/10" : ""
-                  }`}
-                >
-                  <span
-                    className={`flex items-center gap-2 font-medium rounded-full px-2 -ml-2 ${
-                      isCountryActive ? "text-magenta" : "text-ink"
+        {/* Ruled Index Rows */}
+        {groupBy === "country" ? (
+          <ul className="divide-y divide-ink/35">
+            {summary.byCountry.map((c, idx) => {
+              const isCountryActive =
+                activeFilter?.type === "country" && activeFilter.value === c.name;
+              const showCities = isCountryActive;
+              const hasRealCities = c.cities.some(
+                (city) => city.name !== t("unnamedCity"),
+              );
+              return (
+                <li key={c.name}>
+                  <button
+                    type="button"
+                    onClick={() => onFilter && toggleCountry(c.name)}
+                    className={`${rowBase} ${rowHover} ${
+                      isCountryActive ? "bg-magenta/15" : ""
                     }`}
                   >
-                    {hasRealCities && (
-                      <span
-                        className={`text-xs text-ink-muted transition ${
-                          showCities ? "rotate-90" : ""
-                        }`}
-                      >
-                        ▶
+                    <span
+                      className={`flex items-center gap-2.5 font-bold ${
+                        isCountryActive ? "text-magenta" : "text-ink"
+                      }`}
+                    >
+                      <span className="text-xs text-ink-muted">
+                        {String(idx + 1).padStart(2, "0")}.
                       </span>
-                    )}
-                    {c.name}
-                  </span>
-                  <span className="rounded-full bg-verde/15 px-2 py-0.5 text-xs font-medium text-verde">
-                    {t("pinCount", { count: c.count })}
-                  </span>
-                </button>
-                {showCities && hasRealCities && (
-                  <ul className="mb-3 ml-4 space-y-1 text-sm text-ink-muted">
-                    {c.cities.map((city) => {
-                      const isCityActive =
-                        activeFilter?.type === "city" &&
-                        activeFilter.value === city.name;
-                      return (
-                        <li key={city.name}>
-                          <button
-                            type="button"
-                            onClick={() => onFilter && toggleCity(city.name)}
-                            className={`flex w-full items-center justify-between rounded-lg px-2 py-1 text-left transition ${
-                              isCityActive
-                                ? "bg-magenta/10 text-magenta"
-                                : "hover:bg-surface-2"
-                            }`}
-                          >
-                            <span>{city.name}</span>
-                            <span className="text-ink-muted">{city.count}</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <ul className="mt-4 divide-y divide-border">
-          {citiesFlat.map((city) => {
-            const isCityActive =
-              activeFilter?.type === "city" && activeFilter.value === city.name;
-            return (
-              <li key={city.name}>
-                <button
-                  type="button"
-                  onClick={() => onFilter && toggleCity(city.name)}
-                  className={`${rowBase} ${rowHover} ${
-                    isCityActive ? "bg-magenta/10" : ""
-                  }`}
-                >
-                  <span
-                    className={`font-medium px-2 -ml-2 rounded-full ${
-                      isCityActive ? "text-magenta" : "text-ink"
+                      {hasRealCities && (
+                        <span
+                          className={`text-xs text-ink-muted transition ${
+                            showCities ? "rotate-90" : ""
+                          }`}
+                        >
+                          ▶
+                        </span>
+                      )}
+                      {c.name}
+                    </span>
+                    <span className="rounded-xs border border-verde/50 bg-verde/15 px-2 py-0.5 text-xs font-bold text-verde">
+                      {t("pinCount", { count: c.count })}
+                    </span>
+                  </button>
+                  {showCities && hasRealCities && (
+                    <ul className="border-t border-dashed border-ink/30 bg-surface/35 py-2 pl-9 pr-4 space-y-1 text-sm text-ink-muted">
+                      {c.cities.map((city) => {
+                        const isCityActive =
+                          activeFilter?.type === "city" &&
+                          activeFilter.value === city.name;
+                        return (
+                          <li key={city.name}>
+                            <button
+                              type="button"
+                              onClick={() => onFilter && toggleCity(city.name)}
+                              className={`font-typewriter flex w-full items-center justify-between rounded px-2.5 py-1 text-left text-xs transition ${
+                                isCityActive
+                                  ? "bg-magenta/15 font-bold text-magenta"
+                                  : "hover:bg-surface/60"
+                              }`}
+                            >
+                              <span>↳ {city.name}</span>
+                              <span className="font-bold text-ink">{city.count}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <ul className="divide-y divide-ink/35">
+            {citiesFlat.map((city, idx) => {
+              const isCityActive =
+                activeFilter?.type === "city" && activeFilter.value === city.name;
+              return (
+                <li key={city.name}>
+                  <button
+                    type="button"
+                    onClick={() => onFilter && toggleCity(city.name)}
+                    className={`${rowBase} ${rowHover} ${
+                      isCityActive ? "bg-magenta/15" : ""
                     }`}
                   >
-                    {city.name}
-                  </span>
-                  <span className="rounded-full bg-verde/15 px-2 py-0.5 text-xs font-medium text-verde">
-                    {t("pinCount", { count: city.count })}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                    <span
+                      className={`flex items-center gap-2.5 font-bold ${
+                        isCityActive ? "text-magenta" : "text-ink"
+                      }`}
+                    >
+                      <span className="text-xs text-ink-muted">
+                        {String(idx + 1).padStart(2, "0")}.
+                      </span>
+                      {city.name}
+                    </span>
+                    <span className="rounded-xs border border-verde/50 bg-verde/15 px-2 py-0.5 text-xs font-bold text-verde">
+                      {t("pinCount", { count: city.count })}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }

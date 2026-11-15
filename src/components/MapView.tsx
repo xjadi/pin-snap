@@ -160,18 +160,18 @@ export default function MapView({
     if (!map || !ready) return;
 
     const popupHtmlInner = (pin: MapPin) => {
-      const popupBg = isDark ? "#1a140f" : "#ffffff";
-      const popupText = isDark ? "#fbf5ec" : "#16110b";
-      const popupMuted = isDark ? "#a89684" : "#6b5e4d";
-      const popupSub = isDark ? "#2a1f17" : "#f5eddf";
+      const popupBg = isDark ? "#1e1711" : "#fcf8f0";
+      const popupText = isDark ? "#f6ede0" : "#1e1610";
+      const popupMuted = isDark ? "#b09b82" : "#6b5844";
+      const popupSub = isDark ? "#2a2017" : "#efe4ce";
       return `
-        <div style="width:200px;overflow:hidden;border-radius:12px;background:${popupBg};">
-          <div style="height:112px;width:100%;background:${popupSub};">
-            <img src="${escapeHtml(pin.photo_url)}" alt="pin" style="height:112px;width:100%;object-fit:cover;" onerror="this.style.opacity='0.2'" />
+        <div style="width:208px;overflow:hidden;border-radius:4px;background:${popupBg};padding:6px 6px 10px 6px;">
+          <div style="height:118px;width:100%;background:${popupSub};overflow:hidden;">
+            <img src="${escapeHtml(pin.photo_url)}" alt="pin" style="height:118px;width:100%;object-fit:cover;" onerror="this.style.opacity='0.2'" />
           </div>
-          <div style="padding:8px 12px;">
-            <p style="margin:0;font-size:14px;font-weight:600;color:${popupText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(pin.owner_display_name || "Pinner")}</p>
-            <p style="margin:0;font-size:12px;color:${popupMuted};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml([pin.city, pin.country].filter(Boolean).join(", ") || "Pinned location")}</p>
+          <div style="padding:6px 4px 0 4px;">
+            <p style="margin:0;font-size:13px;font-weight:700;color:${popupText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(pin.title || pin.owner_display_name || "Pinner")}</p>
+            <p style="margin:2px 0 0 0;font-family:monospace;font-size:11px;color:${popupMuted};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📍 ${escapeHtml([pin.city, pin.country].filter(Boolean).join(", ") || "Pinned location")}</p>
           </div>
         </div>
       `;

@@ -16,8 +16,8 @@ const PRESET_AVATARS = [
 ];
 
 const inputClass =
-  "mt-1 w-full rounded-xl border border-border bg-surface px-4 py-2.5 outline-none focus:border-magenta focus:ring-2 focus:ring-magenta/20";
-const labelClass = "block text-sm font-medium text-ink";
+  "mt-1.5 w-full rounded-lg border border-border bg-surface-2/60 px-3.5 py-2 font-sans text-sm outline-none focus:border-magenta focus:bg-surface focus:ring-2 focus:ring-magenta/20";
+const labelClass = "font-typewriter block text-xs font-bold uppercase tracking-wider text-ink";
 
 export default function OnboardingForm({
   initial,
@@ -143,18 +143,20 @@ export default function OnboardingForm({
           onChange={(e) => setBio(e.target.value)}
           rows={3}
           placeholder={t("bioPlaceholder")}
-          className={inputClass}
+          className={`${inputClass} journal-lined`}
         />
       </label>
 
       {error && (
-        <p className="rounded-xl bg-danger/10 p-3 text-sm text-danger">{error}</p>
+        <p className="font-typewriter rounded-lg border border-danger/40 bg-danger/10 p-3 text-xs text-danger">
+          {error}
+        </p>
       )}
 
       <button
         type="submit"
         disabled={saving}
-        className="w-full rounded-xl bg-magenta px-4 py-2.5 font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+        className="font-typewriter w-full rounded-lg border-2 border-ink bg-magenta px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-[3px_3px_0px_var(--ink)] transition hover:translate-y-[-1px] hover:opacity-95 disabled:opacity-60"
       >
         {saving ? t("saving") : t("saveStart")}
       </button>

@@ -50,9 +50,17 @@ export default async function AddPinPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="text-sm text-ink-muted">{t("subtitle")}</p>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-dashed border-border pb-4">
+        <div>
+          <span className="luggage-tag mb-2">NEW FIELD ENTRY</span>
+          <h1 className="font-display mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+            {t("title")}
+          </h1>
+          <p className="mt-1 text-sm text-ink-muted">{t("subtitle")}</p>
+        </div>
+        <span className="rubber-stamp -rotate-2 text-[10px] text-magenta">
+          LOG · SNAP · PIN
+        </span>
       </div>
       <AddPinMap existingPins={existingPins} />
     </main>

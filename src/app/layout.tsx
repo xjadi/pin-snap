@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Kanit, IBM_Plex_Sans_Thai, Geist_Mono } from "next/font/google";
+import { Kanit, IBM_Plex_Sans_Thai, Geist_Mono, Courier_Prime } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { Navbar } from "@/components/Navbar";
@@ -27,6 +27,14 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+const courierPrime = Courier_Prime({
+  variable: "--font-courier-prime",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Brand");
   return {
@@ -47,7 +55,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={`${kanit.variable} ${plexThai.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${kanit.variable} ${plexThai.variable} ${geistMono.variable} ${courierPrime.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-paper text-ink">
         <ThemeProvider>

@@ -3,31 +3,45 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --paper: #fbf5ec;
-  --ink: #16110b;
-  --surface: #ffffff;
-  --surface-2: #f5eddf;
-  --border: #e8ddc9;
-  --ink-muted: #6b5e4d;
-  --magenta: #d9421c;
-  --verde: #0e7a55;
-  --sun: #f2b91e;
-  --danger: #c0392b;
-  --popup-tip: #ffffff;
+  --paper: #f3ead8;
+  --paper-grain: #eadcc3;
+  --ink: #1e1610;
+  --surface: #fcf8f0;
+  --surface-2: #efe4ce;
+  --kraft: #dfc79e;
+  --kraft-line: #b99c6b;
+  --border: #d8c7a8;
+  --ink-muted: #6b5844;
+  --magenta: #c83e1d;
+  --navy: #1d3c58;
+  --verde: #1b6b4c;
+  --sun: #d99b16;
+  --danger: #b83225;
+  --popup-tip: #fcf8f0;
+  --tape-bg: rgba(242, 198, 75, 0.52);
+  --tape-border: rgba(201, 152, 34, 0.38);
+  --rule-line: rgba(139, 111, 78, 0.18);
 }
 
 .dark {
-  --paper: #0e0b09;
-  --ink: #fbf5ec;
-  --surface: #1a140f;
-  --surface-2: #2a1f17;
-  --border: #3d2e22;
-  --ink-muted: #a89684;
-  --magenta: #ff6b3d;
-  --verde: #34d27b;
-  --sun: #facc34;
+  --paper: #120d09;
+  --paper-grain: #1a130d;
+  --ink: #f6ede0;
+  --surface: #1e1711;
+  --surface-2: #2a2017;
+  --kraft: #33261a;
+  --kraft-line: #59432f;
+  --border: #3f3022;
+  --ink-muted: #b09b82;
+  --magenta: #f05a36;
+  --navy: #5889b5;
+  --verde: #36c275;
+  --sun: #f0b429;
   --danger: #ff6b5b;
-  --popup-tip: #1a140f;
+  --popup-tip: #1e1711;
+  --tape-bg: rgba(235, 185, 62, 0.34);
+  --tape-border: rgba(235, 185, 62, 0.28);
+  --rule-line: rgba(210, 180, 140, 0.12);
 }
 
 @theme inline {
@@ -35,19 +49,26 @@
   --color-ink: var(--ink);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-kraft: var(--kraft);
   --color-border: var(--border);
   --color-ink-muted: var(--ink-muted);
   --color-magenta: var(--magenta);
+  --color-navy: var(--navy);
   --color-verde: var(--verde);
   --color-sun: var(--sun);
   --color-danger: var(--danger);
   --font-sans: var(--font-plex-thai);
   --font-display: var(--font-kanit);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-courier-prime), var(--font-geist-mono), var(--font-plex-thai);
 }
 
 body {
-  background: var(--paper);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(rgba(120, 88, 50, 0.06) 1px, transparent 0),
+    radial-gradient(rgba(120, 88, 50, 0.04) 1px, transparent 0);
+  background-size: 28px 28px;
+  background-position: 0 0, 14px 14px;
   color: var(--ink);
   font-family: var(--font-sans), sans-serif;
 }
@@ -57,12 +78,18 @@ body {
   font-family: var(--font-kanit), var(--font-plex-thai), sans-serif;
 }
 
+/* Typewriter font for journal dates, logs, coordinates, and stamps */
+.font-typewriter {
+  font-family: var(--font-courier-prime), var(--font-geist-mono), var(--font-plex-thai), monospace;
+  letter-spacing: 0.01em;
+}
+
 /* MapLibre popups — themed via tokens. */
 .maplibregl-popup-content {
   padding: 0 !important;
-  border-radius: 12px !important;
+  border-radius: 6px !important;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+  box-shadow: 0 10px 28px rgba(18, 13, 9, 0.26) !important;
 }
 
 .maplibregl-popup-anchor-top .maplibregl-popup-tip,
@@ -80,15 +107,139 @@ body {
   display: none;
 }
 
-/* Polaroid stack — straighten-on-hover micro-interaction */
+/* Polaroid stack — tactile photo frame with straighten-on-hover micro-interaction */
 .polaroid {
+  position: relative;
   background: var(--surface);
-  border: 3px solid var(--surface);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  border: 6px solid var(--surface);
+  border-bottom-width: 14px;
+  border-radius: 4px;
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.06),
+    0 6px 18px rgba(24, 16, 8, 0.14);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.polaroid:hover {
+button.polaroid:hover,
+a.polaroid:hover {
   transform: rotate(0deg) translateY(-4px) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    0 14px 28px rgba(24, 16, 8, 0.22);
+}
+
+/* Translucent amber Scotch tape strips */
+.scotch-tape {
+  background: var(--tape-bg);
+  border-left: 1.5px dashed var(--tape-border);
+  border-right: 1.5px dashed var(--tape-border);
+  border-top: 1px solid var(--tape-border);
+  border-bottom: 1px solid var(--tape-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(1px);
+  pointer-events: none;
+}
+
+/* Classic Red & Navy Airmail / Par Avion border stripe */
+.airmail-stripe {
+  height: 7px;
+  width: 100%;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--magenta) 0px,
+    var(--magenta) 12px,
+    var(--surface) 12px,
+    var(--surface) 20px,
+    var(--navy) 20px,
+    var(--navy) 32px,
+    var(--surface) 32px,
+    var(--surface) 40px
+  );
+}
+
+/* Ruled notebook lines for field memos & journal entries */
+.journal-lined {
+  background-color: var(--surface-2);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 27px,
+    var(--rule-line) 27px,
+    var(--rule-line) 28px
+  );
+  line-height: 28px;
+}
+
+/* Kraft Library Checkout / Running Log Card */
+.library-card {
+  background-color: var(--kraft);
+  border: 1px solid var(--kraft-line);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 6px 18px rgba(24, 16, 8, 0.14);
+}
+
+.library-card-ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 35px,
+    var(--kraft-line) 35px,
+    var(--kraft-line) 36px
+  );
+}
+
+/* Deckled/aged typewriter note sheet (left journal page) */
+.deckle-note {
+  background-color: var(--surface-2);
+  border: 1.5px solid var(--kraft-line);
+  box-shadow:
+    inset 0 0 24px rgba(168, 128, 72, 0.16),
+    2px 4px 12px rgba(24, 16, 8, 0.1);
+}
+
+/* Manila Luggage Tag Pill with reinforced eyelet hole */
+.luggage-tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 4px 9999px 9999px 4px;
+  border: 1px solid var(--kraft-line);
+  background-color: var(--kraft);
+  padding: 0.2rem 0.65rem 0.2rem 1.35rem;
+  font-family: var(--font-courier-prime), var(--font-geist-mono), var(--font-plex-thai), monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.luggage-tag::before {
+  content: "";
+  position: absolute;
+  left: 0.42rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 9999px;
+  background-color: var(--paper);
+  border: 1.5px solid var(--kraft-line);
+}
+
+/* Rubber ink postmark stamp */
+.rubber-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  padding: 0.2rem 0.55rem;
+  font-family: var(--font-courier-prime), var(--font-geist-mono), var(--font-plex-thai), monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  box-shadow: inset 0 0 0 1px currentColor;
+  opacity: 0.9;
 }

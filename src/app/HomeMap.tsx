@@ -76,59 +76,95 @@ export default function HomeMap({
 
   return (
     <>
-      {/* Clear-filter chip */}
-      {activeFilter && (
-        <div className="mb-3 flex items-center gap-2">
+      {/* Section Header + Clear-filter luggage tag */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <span className="font-typewriter text-xs font-bold uppercase tracking-[0.18em] text-ink-muted">
+          {t("Landing.sectionMapLabel")}
+        </span>
+        {activeFilter && (
           <button
             type="button"
             onClick={() => applyFilter(null)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-magenta/10 px-3 py-1 text-sm font-medium text-magenta transition hover:bg-magenta/20"
+            className="luggage-tag cursor-pointer transition hover:opacity-85"
           >
-            {activeFilter.value} ✕
+            <span>{activeFilter.value}</span>
+            <span className="text-magenta">✕</span>
           </button>
-        </div>
-      )}
-
-      {/* Map in a polaroid frame */}
-      <div ref={mapAnchorRef} className="polaroid scroll-mt-20">
-        <MapView
-          pins={filteredPins}
-          initialZoom={5}
-          onPinClick={(pin) => setActive(pin)}
-          fitBounds={fitBoundsState ?? undefined}
-          className="h-[50vh] w-full"
-        />
+        )}
       </div>
 
-      {localPins.length > 0 && (
-        <p className="mt-3 text-center text-sm text-ink-muted">
-          {activeFilter
-            ? t("Map.filteredOnMap", {
-                shown: filteredPins.length,
-                total: localPins.length,
-              })
-            : t("Map.memoriesOnMap", { count: localPins.length })}
-        </p>
-      )}
+      {/* Map in a taped polaroid frame */}
+      <div ref={mapAnchorRef} className="polaroid relative scroll-mt-20">
+        {/* Corner Scotch tape strips */}
+        <div
+          aria-hidden
+          className="scotch-tape absolute -left-3 -top-3 z-10 h-6 w-20 -rotate-12"
+        />
+        <div
+          aria-hidden
+          className="scotch-tape absolute -right-3 -top-3 z-10 h-6 w-20 rotate-12"
+        />
 
-      {/* Masonry polaroid grid */}
+        <div className="overflow-hidden border border-border/60">
+          <MapView
+            pins={filteredPins}
+            initialZoom={5}
+            onPinClick={(pin) => setActive(pin)}
+            fitBounds={fitBoundsState ?? undefined}
+            className="h-[52vh] w-full"
+          />
+        </div>
+
+        {localPins.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 px-2 pt-2.5">
+            <p className="font-typewriter text-xs font-bold text-ink-muted">
+              📌{" "}
+              {activeFilter
+                ? t("Map.filteredOnMap", {
+                    shown: filteredPins.length,
+                    total: localPins.length,
+                  })
+                : t("Map.memoriesOnMap", { count: localPins.length })}
+            </p>
+            <span className="font-typewriter text-[10px] uppercase tracking-widest text-ink-muted/80">
+              CARTO · VOYAGER FIELD CHART
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Masonry taped polaroid grid */}
       {filteredPins.length > 0 && (
-        <div className="mt-8 columns-2 gap-4 sm:columns-3">
-          {filteredPins.slice(0, 9).map((p, i) => (
-            <PolaroidCard
-              key={p.id}
-              pin={p}
-              index={i}
-              showOwner
-              onClick={() => setActive(p)}
-            />
-          ))}
+        <div className="mt-10">
+          <div className="mb-4 flex items-center gap-3">
+            <span className="font-typewriter text-xs font-bold uppercase tracking-[0.18em] text-ink-muted">
+              {t("Landing.sectionPolaroidsLabel")}
+            </span>
+            <span className="h-px flex-1 border-t border-dashed border-border" />
+          </div>
+          <div className="columns-2 gap-5 sm:columns-3">
+            {filteredPins.slice(0, 9).map((p, i) => (
+              <PolaroidCard
+                key={p.id}
+                pin={p}
+                index={i}
+                showOwner
+                onClick={() => setActive(p)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Summary — below the thumbnails */}
+      {/* Summary — Library Running Log Index Card */}
       {summary && title && (
-        <div className="mt-8">
+        <div className="mt-10">
+          <div className="mb-5 flex items-center gap-3">
+            <span className="font-typewriter text-xs font-bold uppercase tracking-[0.18em] text-ink-muted">
+              {t("Landing.sectionLogLabel")}
+            </span>
+            <span className="h-px flex-1 border-t border-dashed border-border" />
+          </div>
           <SummaryPanel
             pins={localPins}
             summary={summary}

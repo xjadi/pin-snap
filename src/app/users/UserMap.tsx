@@ -102,34 +102,46 @@ export default function UserMap({
 
   return (
     <>
-      {/* Clear-filter chip */}
+      {/* Clear-filter luggage tag */}
       {activeFilter && (
         <div className="mb-3 flex items-center gap-2">
           <button
             type="button"
             onClick={() => applyFilter(null)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-magenta/10 px-3 py-1 text-sm font-medium text-magenta transition hover:bg-magenta/20"
+            className="luggage-tag cursor-pointer transition hover:opacity-85"
           >
-            {activeFilter.value} ✕
+            <span>{activeFilter.value}</span>
+            <span className="text-magenta">✕</span>
           </button>
         </div>
       )}
 
-      <div ref={mapAnchorRef} className="polaroid scroll-mt-20">
-        <MapView
-          pins={filteredPins}
-          initialCenter={center as [number, number] | undefined}
-          initialZoom={6}
-          onMapClick={relocating ? handleMapClick : undefined}
-          onPinClick={(pin) => setActive(pin)}
-          flyTo={flyTo ?? undefined}
-          fitBounds={fitBoundsState ?? undefined}
-          className="h-[50vh] w-full"
+      <div ref={mapAnchorRef} className="polaroid relative scroll-mt-20">
+        <div
+          aria-hidden
+          className="scotch-tape absolute -left-3 -top-3 z-10 h-6 w-20 -rotate-12"
         />
+        <div
+          aria-hidden
+          className="scotch-tape absolute -right-3 -top-3 z-10 h-6 w-20 rotate-12"
+        />
+
+        <div className="overflow-hidden border border-border/60">
+          <MapView
+            pins={filteredPins}
+            initialCenter={center as [number, number] | undefined}
+            initialZoom={6}
+            onMapClick={relocating ? handleMapClick : undefined}
+            onPinClick={(pin) => setActive(pin)}
+            flyTo={flyTo ?? undefined}
+            fitBounds={fitBoundsState ?? undefined}
+            className="h-[50vh] w-full"
+          />
+        </div>
       </div>
 
       {/* Masonry polaroid grid */}
-      <div className="mt-8 columns-2 gap-4 sm:columns-3">
+      <div className="mt-9 columns-2 gap-5 sm:columns-3">
         {filteredPins.map((p, i) => (
           <PolaroidCard
             key={p.id}
@@ -142,7 +154,7 @@ export default function UserMap({
 
       {/* Summary — below the thumbnails */}
       {summary && title && (
-        <div className="mt-8">
+        <div className="mt-10">
           <SummaryPanel
             pins={localPins}
             summary={summary}

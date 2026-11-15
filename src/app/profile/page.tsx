@@ -61,21 +61,22 @@ export default async function ProfilePage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       {needsOnboarding && (
-        <div className="mb-6 rounded-xl border border-sun/40 bg-sun/10 p-4 text-sm text-ink-muted">
-          {t("Profile.banner")}
+        <div className="font-typewriter mb-6 rounded-lg border-2 border-dashed border-sun/60 bg-sun/10 p-4 text-xs font-bold text-ink">
+          ★ {t("Profile.banner")}
         </div>
       )}
 
       <ProfileEditor initial={profile ?? undefined} email={user.email ?? ""} />
 
       <div className="mt-12">
-        <h2 className="font-display mb-4 text-xl font-bold tracking-tight">
-          {t("Profile.title")}
-        </h2>
+        <div className="mb-5 flex items-center gap-3">
+          <span className="luggage-tag">{t("Profile.title")}</span>
+          <span className="h-px flex-1 border-t border-dashed border-border" />
+        </div>
         {pins.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center text-ink-muted">
+          <div className="deckle-note rounded-lg p-12 text-center text-ink-muted">
             <div className="text-4xl">🗺️</div>
-            <p className="mt-3">{t("Profile.emptyState")}</p>
+            <p className="font-typewriter mt-3 text-sm">{t("Profile.emptyState")}</p>
           </div>
         ) : (
           <UserMap
