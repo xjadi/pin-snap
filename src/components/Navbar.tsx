@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { SignOutButton } from "@/components/SignOutButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { JoinMeIcon } from "@/components/JoinMeIcon";
 
 export function Navbar() {
   const t = useTranslations("Nav");
@@ -36,6 +37,13 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-1.5 text-sm sm:gap-2.5">
+          <Link
+            href="/join-me"
+            className="font-typewriter inline-flex items-center gap-1.5 rounded-md border border-verde/40 bg-verde/10 px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-verde transition hover:border-verde hover:bg-verde hover:text-white"
+          >
+            <JoinMeIcon className="h-3.5 w-3.5" />
+            <span>{t("joinMe")}</span>
+          </Link>
           <Link
             href="/users"
             className="font-typewriter rounded-md border border-transparent px-2.5 py-1.5 text-xs font-bold uppercase tracking-wider text-ink-muted transition hover:border-border hover:bg-surface-2 hover:text-ink"

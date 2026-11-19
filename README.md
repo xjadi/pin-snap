@@ -20,6 +20,7 @@ per-user profile maps.
 - 🗺️ Landing page `/` shows **every user's** public pins on one map.
 - 🖱️ Hover a pin → photo popup. Click a pin → detail modal with memo; owner can edit the memo / delete the pin.
 - ➕ `/add` — click the map, paste a photo URL, auto city/country, add a memo, save.
+- 🤝 `/join-me` — **Join Me** board where members post a city & schedule so others can reply in a topic thread to join; posts also appear on the map with a distinct emerald badge icon and a map filter (`All` / `Pins` / `Join Me`).
 - 👥 `/users` — grid of everyone. `/users/[id]` — that user's pins on their own map.
 - ⚙️ `/profile` — edit your avatar/name/bio and see your pins.
 
@@ -32,8 +33,8 @@ Go to <https://supabase.com>, create a project, and grab:
 
 ### 2. Run the schema
 Open the Supabase **SQL Editor** and run [`supabase/schema.sql`](supabase/schema.sql).
-This creates `profiles` and `pins` tables, RLS policies, and a trigger that
-auto-creates a profile row on signup.
+This creates `profiles`, `pins`, `join_me_posts`, and `join_me_replies` tables,
+RLS policies, and a trigger that auto-creates a profile row on signup.
 
 ### 3. Configure auth
 In Supabase → **Authentication → URL configuration**:

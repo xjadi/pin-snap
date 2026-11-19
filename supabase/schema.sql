@@ -129,3 +129,86 @@ create policy "pin_read_all"
 create policy "pin_delete_owner"
   on storage.objects for delete
   using (bucket_id = 'pins' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- =====================================================================
+-- Migration: "Join Me" board posts & thread replies
+-- Lets members post a city + schedule so others can join via replies
+-- and view/filter Join Me posts on the map. Safe to re-run.
+-- =====================================================================
+create table if not exists public.join_me_posts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade references public.profiles (id) on delete cascade,
+  title text not null,
+  city text not null,
+  country text not null default '',
+  lat double precision not null,
+  lng double precision not null,
+  start_date date not null,
+  end_date date,
+  schedule_note text not null default '',
+  details text not null default '',
+  status text not null default 'open' check (status in ('open', 'closed')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists join_me_posts_user_id_idx on public.join_me_posts (user_id);
+create index if not exists join_me_posts_start_date_idx on public.join_me_posts (start_date asc);
+create index if not exists join_me_posts_created_at_idx on public.join_me_posts (created_at desc);
+
+alter table public.join_me_posts enable row level security;
+
+drop policy if exists "join_me_posts_read_all" on public.join_me_posts;
+create policy "join_me_posts_read_all"
+  on public.join_me_posts for select
+  using (true);
+
+drop policy if exists "join_me_posts_insert_self" on public.join_me_posts;
+create policy "join_me_posts_insert_self"
+  on public.join_me_posts for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "join_me_posts_update_self" on public.join_me_posts;
+create policy "join_me_posts_update_self"
+  on public.join_me_posts for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "join_me_posts_delete_self" on public.join_me_posts;
+create policy "join_me_posts_delete_self"
+  on public.join_me_posts for delete
+  using (auth.uid() = user_id);
+
+create table if not exists public.join_me_replies (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.join_me_posts (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade references public.profiles (id) on delete cascade,
+  body text not null,
+  intent text not null default 'reply' check (intent in ('join', 'reply')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists join_me_replies_post_id_idx on public.join_me_replies (post_id, created_at asc);
+create index if not exists join_me_replies_user_id_idx on public.join_me_replies (user_id);
+
+alter table public.join_me_replies enable row level security;
+
+drop policy if exists "join_me_replies_read_all" on public.join_me_replies;
+create policy "join_me_replies_read_all"
+  on public.join_me_replies for select
+  using (true);
+
+drop policy if exists "join_me_replies_insert_self" on public.join_me_replies;
+create policy "join_me_replies_insert_self"
+  on public.join_me_replies for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "join_me_replies_update_self" on public.join_me_replies;
+create policy "join_me_replies_update_self"
+  on public.join_me_replies for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "join_me_replies_delete_self" on public.join_me_replies;
+create policy "join_me_replies_delete_self"
+  on public.join_me_replies for delete
+  using (auth.uid() = user_id);

@@ -2,12 +2,22 @@ import { createClient } from "@/lib/supabase/server";
 import { getTranslations, getLocale } from "next-intl/server";
 import type { MapPin } from "@/lib/pin";
 import { summarizePins } from "@/lib/pin";
-import HomeMap from "@/app/HomeMap";
+import { fetchJoinMePosts } from "@/lib/joinMeQueries";
+import HomeMap, { type MapLayer } from "@/app/HomeMap";
 import GuestJournalHero from "@/components/GuestJournalHero";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ layer?: string }>;
+}) {
+  const sp = searchParams ? await searchParams : undefined;
+  const rawLayer = sp?.layer;
+  const initialLayer: MapLayer =
+    rawLayer === "join-me" || rawLayer === "pins" ? rawLayer : "all";
+
   const t = await getTranslations();
   const locale = await getLocale();
   const supabase = await createClient();
@@ -16,6 +26,7 @@ export default async function HomePage() {
       data: { user },
     },
     { data, error },
+    { posts: joinMePosts },
   ] = await Promise.all([
     supabase.auth.getUser(),
     supabase
@@ -24,6 +35,7 @@ export default async function HomePage() {
         "id, photo_url, lat, lng, city, country, notes, created_at, user_id, title, visited_at, tags, profiles!inner ( display_name, avatar_url )",
       )
       .order("created_at", { ascending: false }),
+    fetchJoinMePosts(supabase, t("Fallback.pinner")),
   ]);
 
   if (error || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -71,6 +83,8 @@ export default async function HomePage() {
       <div id="community-map" className="scroll-mt-20">
         <HomeMap
           pins={pins}
+          joinMePosts={joinMePosts}
+          initialLayer={initialLayer}
           summary={summary}
           title={t("Summary.communityMap")}
           locale={locale}

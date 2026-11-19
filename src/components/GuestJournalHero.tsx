@@ -15,6 +15,7 @@ export default function GuestJournalHero({
   summary: PinSummary;
 }) {
   const t = useTranslations("Landing");
+  const tJoinMe = useTranslations("JoinMe");
   const { user, loading } = useAuth();
   const isSignedIn = loading ? initialIsSignedIn : Boolean(user);
 
@@ -37,7 +38,13 @@ export default function GuestJournalHero({
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link
+              href="/join-me?compose=1"
+              className="font-typewriter inline-flex items-center gap-1.5 rounded-lg border-2 border-verde bg-verde px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:opacity-90"
+            >
+              {tJoinMe("newPostCta")}
+            </Link>
             <Link
               href="/add"
               className="font-typewriter inline-flex items-center gap-2 rounded-lg border-2 border-magenta bg-magenta px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:opacity-90"
